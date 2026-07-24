@@ -15,7 +15,7 @@
   function attachPanZoom(svgEl) {
     return svgPanZoom(svgEl, {
       zoomEnabled: true, panEnabled: true, controlIconsEnabled: false,
-      fit: true, center: true, minZoom: 0.4, maxZoom: 12, zoomScaleSensitivity: 0.35,
+      fit: false, center: false, minZoom: 0.2, maxZoom: 5, zoomScaleSensitivity: 0.35,
     });
   }
 
@@ -80,8 +80,7 @@
     wraps.forEach((wrap, i) => {
       const svgEl = wrap.querySelector('.mermaid-canvas svg');
       if (!svgEl) return;
-      svgEl.removeAttribute('height');
-      svgEl.style.maxWidth = 'none';
+      svgEl.style.width = '100%';
       const pz = attachPanZoom(svgEl);
       wireToolbar(wrap, pz, () => openFullscreen(svgEl, wrap.dataset.mermaidId || `Diagram ${i + 1}`));
     });
