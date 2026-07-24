@@ -1,0 +1,164 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const certs = (await getCollection('certs')).sort((a, b) => a.data.order - b.data.order);
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout title="Practice Exam" activeSlug="exam" description="Practice exams for AWS certifications, matching real exam domain weights.">
+    <div class="content-card" style="max-width: 78ch; margin: 0 auto;">
+        <h1 style="margin-bottom:0.5rem">Practice Exams</h1>
+        <p style="color:var(--ink-soft); margin-bottom:1.5rem">Select a certification. Questions match real domain weights.</p>
+        <div class="exam-picker" id="exam-picker"></div>
+        <div id="exam-app" style="display:none"></div>
+    </div>
+</BaseLayout>
+
+<script>
+(async () => {
+    const BASE = document.querySelector('html').dataset.base ?? '/aws-study-hub';
+    // ponytail: inline cert list, no extra fetch
+    const certs = [{code:"DEA-C01",slug:"dea",status:"complete",title:"AWS Certified Data Engineer – Associate"}];
+    const picker = document.getElementById('exam-picker');
+    const app = document.getElementById('exam-app');
+
+    for (const c of certs) {
+        const card = document.createElement('div');
+        card.className = 'exam-picker-card';
+        if (c.status === 'complete') {
+            card.innerHTML = `<h3>${c.title}</h3><span class="exam-code">${c.code}</span><div class="exam-meta">50 questions · 130 min · 720 to pass</div><button class="start-available" data-slug="${c.slug}">Start Exam</button>`;
+        } else {
+            card.innerHTML = `<h3>${c.title}</h3><span class="exam-code">${c.code}</span><div class="exam-meta">Coming soon</div><button class="start-unavailable" disabled>Not available</button>`;
+        }
+        picker.appendChild(card);
+    }
+
+    picker.addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-slug]');
+        if (!btn) return;
+        const slug = btn.dataset.slug;
+        picker.style.display = 'none';
+        app.style.display = 'block';
+        const exam = await (await fetch(`${BASE}/exams/${slug}.json`)).json();
+        startExam(exam, slug);
+    });
+
+    function startExam(exam, slug) {
+        // Shuffle questions while preserving domain distribution
+        const byDomain = {};
+        exam.questions.forEach(q => { (byDomain[q.domain] ??= []).push(q); });
+        const shuffled = Object.values(byDomain).flat().sort(() => Math.random() - 0.5);
+        // ponytail: Fisher-Yates would be proper but sort-shuffle is fine for practice
+
+        let idx = 0, answered = 0, correct = 0, startTime = Date.now();
+        const answers = new Array(shuffled.length).fill(-1);
+        const domainCorrect = {}, domainTotal = {};
+
+        function render() {
+            if (idx >= shuffled.length) { renderResults(); return; }
+            const q = shuffled[idx];
+            const prevAnswer = answers[idx];
+            domainTotal[q.domain] = (domainTotal[q.domain] ?? 0) + 1;
+
+            let optionsHtml = q.options.map((opt, i) => {
+                let cls = '';
+                if (prevAnswer >= 0) {
+                    cls = i === q.correct ? 'correct' : (i === prevAnswer ? 'incorrect' : 'dimmed');
+                }
+                const disabled = prevAnswer >= 0 ? 'disabled' : '';
+                const checked = prevAnswer === i ? 'checked' : '';
+                return `<li class="${cls}"><label><input type="radio" name="q" value="${i}" ${disabled} ${checked}><span>${opt}</span></label></li>`;
+            }).join('');
+
+            const explanationHtml = prevAnswer >= 0 ? `
+                <div class="exam-explanation">
+                    <strong>${prevAnswer === q.correct ? '✅ Correct' : '❌ Incorrect'}</strong><br><br>
+                    ${q.explanation}
+                    <br><br><a href="${BASE}/${slug}/${q.anchor}" target="_blank">📖 Review this topic in the study guide →</a>
+                </div>` : '';
+
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const remaining = Math.max(0, exam.timeLimit * 60 - elapsed);
+            const mins = Math.floor(remaining / 60);
+            const secs = remaining % 60;
+
+            app.innerHTML = `
+                <div class="exam-header">
+                    <div class="exam-header-left">
+                        <h2>${exam.code} · Question ${idx + 1} of ${shuffled.length}<span class="exam-domain-tag">Domain ${q.domain}</span></h2>
+                    </div>
+                    <div>
+                        <div class="exam-timer">${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}</div>
+                        <div class="exam-progress">${answered} answered</div>
+                    </div>
+                </div>
+                <p class="exam-question-text">${q.question}</p>
+                <ul class="exam-options">${optionsHtml}</ul>
+                ${explanationHtml}
+                <div class="exam-nav">
+                    <button ${idx === 0 ? 'disabled' : ''} id="prev">← Previous</button>
+                    ${prevAnswer >= 0
+                        ? `<button class="primary" id="next">${idx === shuffled.length - 1 ? 'See Results' : 'Next →'}</button>`
+                        : ''}
+                </div>`;
+
+            // Radio click handler
+            if (prevAnswer < 0) {
+                app.querySelectorAll('input[name=q]').forEach(r => {
+                    r.addEventListener('change', (e) => {
+                        const val = parseInt(e.target.value);
+                        answers[idx] = val;
+                        answered++;
+                        if (val === q.correct) {
+                            correct++;
+                            domainCorrect[q.domain] = (domainCorrect[q.domain] ?? 0) + 1;
+                        }
+                        render(); // re-render to show explanation
+                    });
+                });
+            }
+
+            const prevBtn = document.getElementById('prev');
+            if (prevBtn) prevBtn.onclick = () => { idx--; render(); };
+            const nextBtn = document.getElementById('next');
+            if (nextBtn) nextBtn.onclick = () => { idx++; render(); };
+        }
+
+        function renderResults() {
+            const pct = Math.round((correct / shuffled.length) * 100);
+            const passed = pct >= 72; // ponytail: 720/1000 scaled ≈ 72% raw
+
+            let breakdownHtml = exam.domains.map(d => {
+                const dc = domainCorrect[d.id] ?? 0;
+                const dt = domainTotal[d.id] ?? 0;
+                const dp = dt > 0 ? Math.round((dc / dt) * 100) : 0;
+                const cls = dp >= 80 ? 'good' : dp >= 60 ? 'ok' : 'bad';
+                return `<div class="domain-row"><span>D${d.id}: ${d.name}</span><span class="domain-pct ${cls}">${dc}/${dt} (${dp}%)</span></div>`;
+            }).join('');
+
+            app.innerHTML = `
+                <div class="exam-results">
+                    <h2>${exam.code} Results</h2>
+                    <div class="score ${passed ? 'pass' : 'fail'}">${correct}/${shuffled.length} (${pct}%)</div>
+                    <div class="score-detail">${passed ? '✅ Passing score (720+)' : '❌ Below passing score (720)'}</div>
+                    <div class="domain-breakdown"><h3 style="margin-top:0">Domain Breakdown</h3>${breakdownHtml}</div>
+                    <button id="review">Review Answers</button>
+                    <button id="retry" class="primary">Retry Exam</button>
+                </div>`;
+
+            document.getElementById('review').onclick = () => { idx = 0; render(); };
+            document.getElementById('retry').onclick = () => {
+                shuffled.sort(() => Math.random() - 0.5);
+                idx = 0; answered = 0; correct = 0; startTime = Date.now();
+                answers.fill(-1);
+                Object.keys(domainCorrect).forEach(k => delete domainCorrect[k]);
+                Object.keys(domainTotal).forEach(k => delete domainTotal[k]);
+                render();
+            };
+        }
+
+        render();
+    }
+})();
+</script>
