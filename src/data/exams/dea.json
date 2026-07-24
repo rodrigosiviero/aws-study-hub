@@ -1,0 +1,735 @@
+{
+  "code": "DEA-C01",
+  "title": "AWS Certified Data Engineer \u2013 Associate",
+  "totalQuestions": 50,
+  "timeLimit": 130,
+  "passingScore": 720,
+  "domains": [
+    {
+      "id": 1,
+      "name": "Data Ingestion and Transformation",
+      "weight": 34,
+      "count": 17
+    },
+    {
+      "id": 2,
+      "name": "Data Store Management",
+      "weight": 26,
+      "count": 13
+    },
+    {
+      "id": 3,
+      "name": "Data Operations and Support",
+      "weight": 22,
+      "count": 11
+    },
+    {
+      "id": 4,
+      "name": "Data Security and Governance",
+      "weight": 18,
+      "count": 9
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "domain": 1,
+      "question": "A company needs to ingest clickstream events in real time, store them durably for 7 days, and run a Lambda function to enrich each event. The Lambda occasionally fails and must reprocess specific records. Which service as source?",
+      "options": [
+        "A. Kinesis Data Firehose",
+        "B. S3 with Event Notifications",
+        "C. Kinesis Data Streams",
+        "D. S3 with EventBridge"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Kinesis Data Streams supports replay \u2014 records persist up to 365 days, consumers re-read by iterator. A is wrong \u2014 Firehose does NOT support replay once delivered. B is wrong \u2014 S3 notifications are not a replayable stream. D is wrong \u2014 same reason as B.",
+      "anchor": "#task-11-perform-data-ingestion"
+    },
+    {
+      "id": 2,
+      "domain": 1,
+      "question": "A pipeline reads from Kinesis and calls a third-party API (100 req/s limit) for each record, but the stream receives 500 records/second. Best approach?",
+      "options": [
+        "A. Increase Kinesis shards",
+        "B. Use SQS as a buffer between Kinesis and Lambda",
+        "C. Use Firehose to batch before calling the API",
+        "D. Configure enhanced fan-out"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. SQS buffers and decouples \u2014 Lambda drains at controlled rate under 100 req/s. A is wrong \u2014 more shards increases read throughput but not throttle downstream. C is wrong \u2014 Firehose cannot call custom REST APIs. D is wrong \u2014 fan-out improves read throughput, not rate limiting.",
+      "anchor": "#skill-119-throttling-and-rate-limits"
+    },
+    {
+      "id": 3,
+      "domain": 1,
+      "question": "Migrate on-premises Oracle to Aurora PostgreSQL with minimal downtime and schema conversion. Which combination?",
+      "options": [
+        "A. DMS only, manual schema conversion",
+        "B. DMS with DMS Schema Conversion",
+        "C. DataSync for data, Glue for schema",
+        "D. DMS with AWS SCT"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. DMS Schema Conversion (replaced retired SCT) converts schemas; DMS does CDC for near-zero downtime. A is error-prone. C \u2014 DataSync is for files, not DBs. D \u2014 SCT is retired.",
+      "anchor": "#skill-111-streaming-sources"
+    },
+    {
+      "id": 4,
+      "domain": 1,
+      "question": "Pipeline must run every weekday 8 AM Asia/Tokyo, with retry, 15-min flexible window, and DLQ. Which service?",
+      "options": [
+        "A. EventBridge scheduled rules (legacy)",
+        "B. EventBridge Scheduler",
+        "C. Lambda with cron",
+        "D. Amazon MWAA"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Scheduler supports timezone-aware cron, flexible windows, retry, and DLQ. A lacks flexible windows/DLQ. C is UTC-only. D is overkill for a daily trigger.",
+      "anchor": "#skill-115-schedulers"
+    },
+    {
+      "id": 5,
+      "domain": 1,
+      "question": "Serverless pipeline: ingest API request, validate, call third-party API, write to DynamoDB in order. Which service?",
+      "options": [
+        "A. Lambda",
+        "B. MWAA",
+        "C. Step Functions",
+        "D. Glue Workflows"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Step Functions is serverless, supports ordering via Map state on SQS FIFO. A \u2014 Lambda is concurrent, no order guarantee. B \u2014 MWAA is for complex DAGs. D \u2014 Glue Workflows only orchestrate Glue jobs/crawlers.",
+      "anchor": "#task-13-orchestrate-data-pipelines"
+    },
+    {
+      "id": 6,
+      "domain": 1,
+      "question": "MSK Standard cluster at 85% CPU during peak. Team worries about rebalancing failures. What to do?",
+      "options": [
+        "A. Migrate to MSK Express",
+        "B. Add more Kafka partitions",
+        "C. Scale up brokers to keep CPU under 60%",
+        "D. Enable MSK auto-scaling"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Best practice: keep MSK CPU under 60% for rebalancing/recovery headroom. A \u2014 Express is different architecture. B \u2014 more partitions doesn't reduce per-broker CPU. D \u2014 no auto-scaling for Standard brokers.",
+      "anchor": "#skill-111-streaming-sources"
+    },
+    {
+      "id": 7,
+      "domain": 1,
+      "question": "Glue ETL reads JSON from S3, writes Parquet, but reprocesses everything daily. How to optimize?",
+      "options": [
+        "A. Enable Glue job bookmarks",
+        "B. Switch to Lambda",
+        "C. Use EMR",
+        "D. Track state in DynamoDB"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. Job bookmarks track processed S3 objects so only new/changed files are read. B \u2014 15-min timeout. C \u2014 more ops, same reprocessing issue. D \u2014 reinventing bookmarks.",
+      "anchor": "#skill-113-batch-ingestion-configuration"
+    },
+    {
+      "id": 8,
+      "domain": 1,
+      "question": "Lambda processes Kinesis records but fails on individual records, causing entire batch retry and duplicates. Best fix?",
+      "options": [
+        "A. BisectBatchOnFunctionError + DLQ destination",
+        "B. Increase Lambda timeout",
+        "C. Enhanced fan-out",
+        "D. Move to Glue streaming ETL"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. BisectBatchOnFunctionError isolates bad records; DestinationConfig sends failures to DLQ. B \u2014 more timeout doesn't prevent duplicate retries. C \u2014 improves throughput, not error handling. D \u2014 different architecture.",
+      "anchor": "#skill-117-lambda--kinesis-integration"
+    },
+    {
+      "id": 9,
+      "domain": 1,
+      "question": "Deliver streaming data to 3 S3 buckets and OpenSearch, each with different transformations. Which service?",
+      "options": [
+        "A. Kinesis Streams + multiple Lambda",
+        "B. Kinesis Firehose + multiple delivery streams",
+        "C. MSK + Kafka Connect",
+        "D. EventBridge + multiple targets"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Firehose supports multiple delivery streams, each with its own Lambda transform and destination. A requires building consumers. C is more complex. D doesn't do continuous stream delivery.",
+      "anchor": "#skill-1110-fan-in-and-fan-out"
+    },
+    {
+      "id": 10,
+      "domain": 1,
+      "question": "Scheduled Salesforce-to-S3 integration with field-level mapping and data masking. Which service?",
+      "options": [
+        "A. Glue ETL with custom connectors",
+        "B. EventBridge with custom transformers",
+        "C. Amazon AppFlow",
+        "D. DMS with transformation rules"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. AppFlow is purpose-built for no-code SaaS-to-AWS integration with mapping, masking, scheduled/incremental flows. A requires custom code. B doesn't do SaaS extraction. D is for DB migration.",
+      "anchor": "#skill-112-batch-sources"
+    },
+    {
+      "id": 11,
+      "domain": 1,
+      "question": "10,000 independent executions/second, each under 5 minutes. Step Functions Standard or Express?",
+      "options": [
+        "A. Standard for exactly-once",
+        "B. Express for high throughput and low cost",
+        "C. Standard with retry policies",
+        "D. Express with visual debugging"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Express supports up to 100K starts/sec, cheaper \u2014 ideal for high-throughput short-lived workloads. A scales slower. C doesn't solve throughput. D \u2014 Express lacks visual debugging.",
+      "anchor": "#skill-133-serverless-workflows"
+    },
+    {
+      "id": 12,
+      "domain": 1,
+      "question": "Need 5-minute tumbling window aggregations over Kinesis stream before writing to S3. Which service?",
+      "options": [
+        "A. Lambda tumbling window event source",
+        "B. Firehose with buffering",
+        "C. Kinesis Data Analytics (Managed Flink)",
+        "D. EventBridge time-based rules"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Managed Flink natively supports tumbling/sliding/session windows \u2014 purpose-built for stateful stream processing. A has 5-min max and less efficient state. B is delivery timing, not aggregation. D doesn't process streams.",
+      "anchor": "#skill-1112-stateful-vs-stateless-data-transactions"
+    },
+    {
+      "id": 13,
+      "domain": 1,
+      "question": "Glue job writes small Parquet files (<1 MB) causing slow Athena queries. Most cost-effective fix?",
+      "options": [
+        "A. Athena CTAS to rewrite table",
+        "B. Glue compaction job to merge files",
+        "C. Increase Glue DPUs",
+        "D. Switch to ORC"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Compaction directly addresses small-file problem cost-effectively. A is full table rewrite. C doesn't change file size. D \u2014 format isn't the issue.",
+      "anchor": "#skill-124-cost-optimization-while-processing"
+    },
+    {
+      "id": 14,
+      "domain": 1,
+      "question": "Raw JSON in S3 causes slow expensive Athena queries. What to do?",
+      "options": [
+        "A. Enable S3 Versioning",
+        "B. Convert to Parquet and add partitioning",
+        "C. S3 Intelligent-Tiering",
+        "D. Increase Athena DPU limit"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Parquet enables column pruning and predicate pushdown; partitioning enables partition pruning \u2014 both reduce data scanned. A doesn't affect query speed. C reduces storage cost only. D doesn't fix scanning JSON.",
+      "anchor": "#skill-126-format-transformation"
+    },
+    {
+      "id": 15,
+      "domain": 1,
+      "question": "Need idempotent Kinesis consumer so reprocessing doesn't create duplicates. Best approach?",
+      "options": [
+        "A. Kinesis sequence numbers as partition keys in DynamoDB with ConditionExpression",
+        "B. S3 as checkpoint store",
+        "C. Enhanced fan-out for exactly-once",
+        "D. Firehose to deduplicate"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. Sequence numbers as partition keys + put-if-absent condition ensures idempotent writes. B doesn't prevent record-level duplicates. C doesn't provide exactly-once. D has no deduplication.",
+      "anchor": "#skill-1111-replayability"
+    },
+    {
+      "id": 16,
+      "domain": 1,
+      "question": "MWAA DAG fails intermittently due to Glue job timeout. First troubleshooting step?",
+      "options": [
+        "A. Increase MWAA environment class",
+        "B. Check CloudWatch Logs for Glue driver/executor logs",
+        "C. Switch to Step Functions",
+        "D. Enable Glue job bookmarks"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. CloudWatch Logs show OOM, skew, or insufficient DPUs \u2014 the first diagnostic. A affects scheduler, not Glue execution. C doesn't diagnose. D tracks processed files, not timeouts.",
+      "anchor": "#skill-127-troubleshooting-transformations"
+    },
+    {
+      "id": 17,
+      "domain": 1,
+      "question": "Transform CSV files from on-premises SFTP into Parquet on S3. Which services?",
+      "options": [
+        "A. Transfer Family + Glue ETL",
+        "B. DMS + Athena",
+        "C. DataSync + EMR",
+        "D. S3 Event Notifications + Lambda"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. Transfer Family manages SFTP ingestion into S3; Glue ETL handles CSV-to-Parquet. B \u2014 DMS is for DBs. C \u2014 EMR is overkill for format conversion. D \u2014 S3 events don't pull from SFTP.",
+      "anchor": "#skill-114-migration-tools"
+    },
+    {
+      "id": 18,
+      "domain": 2,
+      "question": "Team wants schema evolution, time travel, and ACID transactions on a data lake without managing Iceberg infrastructure. Which service?",
+      "options": [
+        "A. EMR with self-managed Iceberg",
+        "B. Glue Data Catalog",
+        "C. Amazon S3 Tables",
+        "D. Amazon Redshift"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. S3 Tables is fully managed Iceberg on S3 \u2014 schema evolution, time travel, ACID without self-managing. A requires ops effort. B is metadata only. D is a warehouse, not a lake table format.",
+      "anchor": "#skill-217-open-table-formats"
+    },
+    {
+      "id": 19,
+      "domain": 2,
+      "question": "Redshift cluster has uneven query performance. Some slices have much more data. Cause and fix?",
+      "options": [
+        "A. Enable concurrency scaling",
+        "B. Choose a better DISTKEY",
+        "C. Switch to Redshift Serverless",
+        "D. Use Spectrum instead"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Uneven DISTKEY causes data skew across slices. A adds query capacity, not distribution. C has same distribution concepts. D queries S3 externally.",
+      "anchor": "#skill-241-schemas-for-redshift-dynamodb-lake-formation"
+    },
+    {
+      "id": 20,
+      "domain": 2,
+      "question": "DynamoDB table with TTL attribute. Want to trigger Lambda when items expire. How?",
+      "options": [
+        "A. DynamoDB TTL directly triggers Lambda",
+        "B. Enable Streams, filter for TTL delete events",
+        "C. EventBridge for TTL expiration",
+        "D. CloudWatch Events on DynamoDB metrics"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. TTL deletes generate stream records (userIdentity: service.amazonaws.com). Lambda filters these. A \u2014 TTL has no direct Lambda trigger. C \u2014 no native TTL events. D \u2014 metrics don't trigger per-item.",
+      "anchor": "#skill-234-versioning-and-ttl"
+    },
+    {
+      "id": 21,
+      "domain": 2,
+      "question": "Query S3 data and live Aurora PostgreSQL from a single query. Which approach?",
+      "options": [
+        "A. DMS to replicate Aurora to S3, then Athena",
+        "B. Redshift Federated Query to Aurora",
+        "C. Athena Federated Query via Lambda",
+        "D. Glue ETL to pre-join"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Redshift Federated Query pushes SQL to Aurora via JDBC, joining Spectrum (S3) with live Aurora. A has replication latency. C exists but less performant. D eliminates ad-hoc flexibility.",
+      "anchor": "#skill-215-migrationremote-access"
+    },
+    {
+      "id": 22,
+      "domain": 2,
+      "question": "Give analytics team read-only access to specific columns in a Glue Data Catalog table. Which service?",
+      "options": [
+        "A. IAM only",
+        "B. Lake Formation",
+        "C. AWS Config",
+        "D. Amazon Macie"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Lake Formation provides column-level and row-level (LF-Tags) grants. A operates at service/resource level. C tracks configuration. D discovers PII.",
+      "anchor": "#skill-224-lake-formation-permissions"
+    },
+    {
+      "id": 23,
+      "domain": 2,
+      "question": "Implement vector similarity search on existing PostgreSQL data. Which service?",
+      "options": [
+        "A. OpenSearch with k-NN",
+        "B. Aurora PostgreSQL with pgvector",
+        "C. Amazon Neptune",
+        "D. Bedrock Knowledge Bases"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Aurora pgvector supports HNSW/IVF indexes \u2014 best when you already have PostgreSQL. A is a separate system. C is for graphs. D is for RAG.",
+      "anchor": "#skill-213-storage-services-for-access-patterns"
+    },
+    {
+      "id": 24,
+      "domain": 2,
+      "question": "Glue crawler is slow re-crawling entire S3 prefix daily. How to optimize?",
+      "options": [
+        "A. Increase crawler DPU allocation",
+        "B. Use incremental crawling and partition projection",
+        "C. Replace with manual Catalog API calls",
+        "D. Run crawler less frequently"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Incremental crawling processes only new/changed objects; partition projection infers partitions without crawling. A doesn't fix full re-crawling. C requires more dev effort. D doesn't solve per-run performance.",
+      "anchor": "#skill-223-schemas-and-crawlers"
+    },
+    {
+      "id": 25,
+      "domain": 2,
+      "question": "Share live Redshift data with another AWS account without copying. Which feature?",
+      "options": [
+        "A. Cross-Region snapshots",
+        "B. Spectrum with cross-account S3",
+        "C. Redshift Data Sharing",
+        "D. DMS ongoing replication"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Data Sharing provides live, no-copy sharing between clusters/accounts. A is point-in-time copies. B queries S3, not live Redshift. D has latency.",
+      "anchor": "#skill-215-migrationremote-access"
+    },
+    {
+      "id": 26,
+      "domain": 2,
+      "question": "S3 data: Standard 30 days, then Standard-IA, Glacier Deep Archive after 1 year, delete after 7 years. What to configure?",
+      "options": [
+        "A. S3 Lifecycle policy with multiple rules",
+        "B. S3 Event Notifications with Lambda",
+        "C. AWS Config rule",
+        "D. S3 Batch Operations"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. A single lifecycle policy with multiple transition actions and expiration. B doesn't support time-based actions. C evaluates compliance. D is for one-time bulk operations.",
+      "anchor": "#skill-232-s3-lifecycle-policies"
+    },
+    {
+      "id": 27,
+      "domain": 2,
+      "question": "Comparing HNSW vs IVF vector indexes. Which is correct?",
+      "options": [
+        "A. HNSW is more memory-efficient but slower",
+        "B. IVF supports incremental updates better",
+        "C. HNSW is graph-based, fast, memory-intensive; IVF clusters vectors, more memory-efficient",
+        "D. IVF always has better recall"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. HNSW: graph-based, fast, memory-hungry. IVF: k-means clusters, scans nearest, more memory-efficient, lower recall. A \u2014 opposite. B \u2014 HNSW supports incremental better. D \u2014 HNSW typically has better recall.",
+      "anchor": "#skill-218-vector-index-types"
+    },
+    {
+      "id": 28,
+      "domain": 2,
+      "question": "A Redshift materialized view refreshes every 30 minutes. Analysts query it frequently. The base table receives continuous INSERTs. What is the best practice?",
+      "options": [
+        "A. Use a scheduled Redshift query to recreate the view",
+        "B. Use auto-refresh materialized views",
+        "C. Use CTAS instead of materialized views",
+        "D. Query the base table directly"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Auto-refresh materialized views update incrementally when the base table changes \u2014 more efficient than full rebuild. A is manual and slower. C requires full rewrite each time. D defeats the purpose of pre-computed results.",
+      "anchor": "#skill-215-migrationremote-access"
+    },
+    {
+      "id": 29,
+      "domain": 2,
+      "question": "An application needs sub-millisecond reads with strong consistency and durability. The dataset fits in memory. Which service?",
+      "options": [
+        "A. DynamoDB with DAX",
+        "B. Amazon MemoryDB for Redis",
+        "C. ElastiCache for Memcached",
+        "D. Aurora Serverless v2"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. MemoryDB provides sub-ms latency, strong consistency (unlike ElastiCache Redis), and durability (multi-AZ). A \u2014 DAX provides microsecond cache but DynamoDB itself is single-digit ms. C \u2014 Memcached is not durable and has eventual consistency. D \u2014 Aurora is ms-level, not sub-ms.",
+      "anchor": "#skill-211-storage-services-for-cost-and-performance"
+    },
+    {
+      "id": 30,
+      "domain": 2,
+      "question": "A Glue crawler adds a new column to an existing table. Downstream Athena queries fail with \"column not found\". Why?",
+      "options": [
+        "A. Crawler schema change policy is set to IGNORE",
+        "B. Athena engine cache is stale",
+        "C. The column is in a nested JSON field not supported by Athena",
+        "D. Glue Data Catalog requires manual table update for schema changes"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. If schema change policy is IGNORE, the crawler detects but doesn't apply the new column to the catalog. Set to UPDATE_IN_DATABASE to apply changes. B is unlikely for new column errors. C would show a different error. D is false \u2014 crawlers do update schemas when configured.",
+      "anchor": "#skill-223-schemas-and-crawlers"
+    },
+    {
+      "id": 31,
+      "domain": 3,
+      "question": "A Glue ETL job fails with OutOfMemoryError on the executor. First thing to check?",
+      "options": [
+        "A. Increase DPUs",
+        "B. Check Spark UI for data skew and shuffle spill",
+        "C. Enable job bookmarks",
+        "D. Switch to EMR Serverless"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Spark UI shows task distribution, shuffle, and memory usage to identify skew causing OOM. A adds resources without diagnosing. C tracks processed files. D is a different platform.",
+      "anchor": "#skill-127-troubleshooting-transformations"
+    },
+    {
+      "id": 32,
+      "domain": 3,
+      "question": "EMR Spark job is slow. Spark History Server shows one task 10x longer than others. What is this?",
+      "options": [
+        "A. Network latency",
+        "B. Data skew",
+        "C. Insufficient memory",
+        "D. Disk I/O bottleneck"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. One long task in a stage is classic data skew. Fix with salting or broadcast join. A unlikely as single-task skew. C does not address root cause. D would affect all tasks.",
+      "anchor": "#skill-345-implement-data-skew-mechanisms"
+    },
+    {
+      "id": 33,
+      "domain": 3,
+      "question": "Detect anomalies in Kinesis IteratorAge metric without static thresholds. Which CloudWatch feature?",
+      "options": [
+        "A. Metric math",
+        "B. Anomaly Detection",
+        "C. Composite alarms",
+        "D. Contributor Insights"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Anomaly Detection uses ML to set expected bands and alerts on deviation. A combines metrics mathematically. C combines alarms. D identifies top contributors.",
+      "anchor": "#skill-333-notifications-during-monitoring"
+    },
+    {
+      "id": 34,
+      "domain": 3,
+      "question": "Profile a 500 GB dataset for distributions, missing values, and outliers before ETL. Which service?",
+      "options": [
+        "A. Athena with SQL",
+        "B. Glue DataBrew",
+        "C. QuickSight",
+        "D. Glue Data Quality"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. DataBrew provides visual data profiling \u2014 statistics, distributions, missing values, outliers \u2014 without code. A requires SQL for each stat. C is for dashboards. D is for quality rules.",
+      "anchor": "#skill-316-prepare-data-for-transformation"
+    },
+    {
+      "id": 35,
+      "domain": 3,
+      "question": "Step Functions execution failed at state 3. Need input/output of each state to debug. Where?",
+      "options": [
+        "A. CloudWatch Logs only",
+        "B. Step Functions Execution History",
+        "C. X-Ray traces",
+        "D. S3 execution logs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Execution History records input/output, status, timing for every state. A lacks structured state I/O. C is out of scope. D is not a Step Functions feature.",
+      "anchor": "#skill-312-troubleshoot-managed-workflows"
+    },
+    {
+      "id": 36,
+      "domain": 3,
+      "question": "Ad-hoc SQL queries on S3 data and prototype ETL with Spark. Serverless, pay-per-use. Which service?",
+      "options": [
+        "A. EMR on EC2",
+        "B. EMR Serverless",
+        "C. Glue ETL",
+        "D. Athena notebooks (Apache Spark)"
+      ],
+      "correct": 3,
+      "explanation": "D is correct. Athena notebooks provide Jupyter-like serverless Spark \u2014 pay per DPU-second. A requires cluster management. B is for batch jobs. C is for production ETL.",
+      "anchor": "#skill-324-athena-notebooks-with-apache-spark"
+    },
+    {
+      "id": 37,
+      "domain": 3,
+      "question": "Pipeline generates millions of small log files daily. CloudWatch Logs is expensive. Cost-effective long-term storage and analysis?",
+      "options": [
+        "A. Keep all in CloudWatch Logs",
+        "B. Subscription filter to Firehose to S3, query with Athena",
+        "C. Manual export to S3 daily",
+        "D. OpenSearch for all logs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Subscription filter to Firehose then S3 is automated; Athena provides cheap SQL querying. A is expensive. C is manual. D is expensive for archival.",
+      "anchor": "#skill-338-analyze-logs"
+    },
+    {
+      "id": 38,
+      "domain": 3,
+      "question": "Glue Data Quality finds 5% NULL in a required column. Want to fail the job when threshold exceeded. How?",
+      "options": [
+        "A. Custom Lambda check after job",
+        "B. DQDL ruleset with isComplete rule, fail on violation",
+        "C. CloudWatch alarm on Glue metrics",
+        "D. Athena validation after each run"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. DQDL rules like isComplete with thresholds, job fails on violation. A is manual. C requires custom metric extraction. D is post-hoc.",
+      "anchor": "#skill-341-run-data-quality-checks"
+    },
+    {
+      "id": 39,
+      "domain": 3,
+      "question": "Glue ETL job reads from JDBC (Aurora) and gets intermittent connection timeouts. Most likely cause?",
+      "options": [
+        "A. Aurora under-provisioned",
+        "B. No RDS Proxy \u2014 connection storms exhaust connections",
+        "C. Insufficient DPUs",
+        "D. S3 endpoint misconfigured"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Without RDS Proxy, multiple executors opening JDBC connections can exhaust Aurora. RDS Proxy pools connections. A is possible but less likely. C affects speed not JDBC. D is unrelated.",
+      "anchor": "#skill-119-throttling-and-rate-limits"
+    },
+    {
+      "id": 40,
+      "domain": 3,
+      "question": "Redshift query slow. STL_QUERY shows high wlm_queue_time in default queue. What and how to fix?",
+      "options": [
+        "A. Data skew \u2014 redistribute table",
+        "B. Waiting for WLM slot \u2014 increase concurrency or use concurrency scaling",
+        "C. Need Spectrum",
+        "D. Need VACUUM"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. High wlm_queue_time means waiting for a slot. Fix: increase WLM concurrency or enable concurrency scaling. A shows high execution time not queue time. C is for S3 data. D fixes bloat not queuing.",
+      "anchor": "#skill-334-troubleshoot-performance"
+    },
+    {
+      "id": 41,
+      "domain": 3,
+      "question": "QuickSight BI dashboards with ML-powered anomaly detection and forecasting without building models. Which feature?",
+      "options": [
+        "A. Embedded analytics",
+        "B. ML Insights",
+        "C. Paginated reports",
+        "D. SPICE import"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. ML Insights provides built-in anomaly detection, forecasting, narratives. A is for embedding. C is scheduled reports. D is in-memory storage.",
+      "anchor": "#skill-321-visualize-data"
+    },
+    {
+      "id": 42,
+      "domain": 4,
+      "question": "A data engineer needs to encrypt S3 objects at rest using a customer-managed key, and the key must be rotated automatically every year. Which KMS feature?",
+      "options": [
+        "A. AWS managed key (aws/s3)",
+        "B. Customer managed CMK with automatic annual rotation",
+        "C. External key store with manual rotation",
+        "D. S3 Bucket Keys"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Customer-managed CMKs support automatic annual rotation. A does not support automatic rotation. C is manual. D reduces KMS API calls but doesn't rotate the key.",
+      "anchor": "#task-44-implement-data-security-standards"
+    },
+    {
+      "id": 43,
+      "domain": 4,
+      "question": "Lake Formation grants a team SELECT on a table. They should only see rows where region = 'US'. How?",
+      "options": [
+        "A. IAM policy with condition",
+        "B. Row-level filter with LF-Tags",
+        "C. Glue ETL to create filtered views",
+        "D. S3 bucket policy"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. LF-Tags enable row-level access control in Lake Formation. Tag rows with region and grant access to specific tag values. A cannot filter at row level. C creates data duplication. D operates at object level.",
+      "anchor": "#skill-417-lake-formation-permissions"
+    },
+    {
+      "id": 44,
+      "domain": 4,
+      "question": "A company must discover PII in millions of S3 objects across hundreds of buckets. Which service automates this?",
+      "options": [
+        "A. AWS Config",
+        "B. Amazon Macie",
+        "C. AWS Inspector",
+        "D. Amazon GuardDuty"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Macie uses ML + pattern matching to automatically discover and classify PII in S3. A tracks resource configuration. C scans compute. D detects threats.",
+      "anchor": "#skill-416-macie"
+    },
+    {
+      "id": 45,
+      "domain": 4,
+      "question": "A Glue job needs a database password. The password rotates every 30 days. How should the job retrieve it?",
+      "options": [
+        "A. Store in S3 and read at runtime",
+        "B. AWS Secrets Manager with automatic rotation",
+        "C. Parameter Store with manual rotation",
+        "D. Hardcode in Glue job parameters"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Secrets Manager supports automatic rotation (native for RDS/Aurora) and the Glue job retrieves via GetSecretValue API. A has no rotation. C requires manual rotation. D is a security anti-pattern.",
+      "anchor": "#skill-413-secrets-manager"
+    },
+    {
+      "id": 46,
+      "domain": 4,
+      "question": "An audit requires tracking all API calls that modified S3 bucket policies in the last 90 days. Which service?",
+      "options": [
+        "A. CloudWatch Logs",
+        "B. AWS CloudTrail",
+        "C. VPC Flow Logs",
+        "D. AWS Config"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. CloudTrail logs all management events (including S3 policy changes) with 90-day free retention. Create a trail for longer retention. A captures Lambda logs, not API calls. C captures network traffic. D tracks resource state, not API calls.",
+      "anchor": "#skill-419-audit-logging"
+    },
+    {
+      "id": 47,
+      "domain": 4,
+      "question": "A data team must share S3 data with an external partner account using Lake Formation, but only specific columns. How?",
+      "options": [
+        "A. S3 bucket policy with conditions",
+        "B. Lake Formation column-level grants",
+        "C. IAM cross-account role",
+        "D. S3 pre-signed URLs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Lake Formation column-level grants allow sharing specific columns to external accounts. A cannot filter columns. C is too broad. D is for temporary individual object access.",
+      "anchor": "#skill-417-lake-formation-permissions"
+    },
+    {
+      "id": 48,
+      "domain": 4,
+      "question": "S3 objects must not be deleted or overwritten for 3 years after creation. Which S3 feature?",
+      "options": [
+        "A. S3 Versioning only",
+        "B. S3 Object Lock in Governance mode",
+        "C. S3 Object Lock in Compliance mode",
+        "D. S3 MFA Delete"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Compliance mode prevents any user (including root) from deleting or overwriting objects until the retention period expires. A allows deletion of all versions. B allows privileged users to bypass. D prevents deletion with MFA but has no retention period.",
+      "anchor": "#task-44-implement-data-security-standards"
+    },
+    {
+      "id": 49,
+      "domain": 4,
+      "question": "AWS IAM Access Analyzer generates a finding that an S3 bucket is accessible to the entire internet. The bucket contains public datasets. What should the engineer do?",
+      "options": [
+        "A. Immediately restrict bucket access",
+        "B. Review the finding, confirm the bucket should be public, and archive the finding",
+        "C. Delete the bucket",
+        "D. Ignore the finding"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Access Analyzer reports on what IS accessible, not what should be. If the bucket is intentionally public (public datasets), archive the finding as a known and accepted configuration. A breaks the use case. C destroys data. D leaves the finding active.",
+      "anchor": "#skill-411-least-privilege"
+    },
+    {
+      "id": 50,
+      "domain": 4,
+      "question": "A company uses S3, Redshift, and Glue. They want a centralized data governance solution with domain-based access, data lineage, and business catalog. Which service?",
+      "options": [
+        "A. Lake Formation only",
+        "B. AWS DataZone",
+        "C. AWS Catalog",
+        "D. IAM + SCPs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. DataZone provides data portals, business catalog, domain-based governance, and data lineage across S3, Redshift, and Glue. A provides FGAC but not business catalogs or portals. C does not exist as a standalone service. D is IAM-level control without data governance features.",
+      "anchor": "#skill-412-governance-and-cataloging"
+    }
+  ]
+}

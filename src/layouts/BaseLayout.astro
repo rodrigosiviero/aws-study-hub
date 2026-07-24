@@ -43,6 +43,7 @@ const base = import.meta.env.BASE_URL;
             </a>
             <nav class="header-cert-nav">
                 <a href={base} class:list={{ active: activeSlug === 'home' }}>Home</a>
+                <a href={`${base}/exam/`} class:list={{ active: activeSlug === 'exam' }}>Practice Exam</a>
                 {certs.map((c) => (
                     <a href={`${base}/${c.slug}/`} class:list={{ active: activeSlug === c.slug }}>
                         {c.data.code ?? c.data.title}
