@@ -539,7 +539,6 @@ aside nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px
   color: var(--amber-deep);
 }
 .mermaid-canvas {
-  min-height: 380px;
   overflow: hidden;
   cursor: grab;
   touch-action: none;
