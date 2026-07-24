@@ -1,0 +1,38 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import { buildToc } from '../../lib/toc';
+
+export async function getStaticPaths() {
+  const certs = await getCollection('certs');
+  return certs.map((entry) => ({
+    params: { slug: entry.slug },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await entry.render();
+const toc = buildToc(headings);
+const hasToc = toc.some((s) => s.subsections.length > 0);
+---
+
+<BaseLayout title={entry.data.title} activeSlug={entry.slug} description={entry.data.description}>
+    {hasToc ? (
+        <div class="layout-container">
+            <Sidebar toc={toc} />
+            <main class="doc">
+                <div class="markdown-body content-card">
+                    <Content />
+                </div>
+            </main>
+        </div>
+    ) : (
+        <div class="markdown-body content-card" style="max-width: 78ch; margin: 0 auto;">
+            <Content />
+        </div>
+    )}
+</BaseLayout>
+
+<script src={`${import.meta.env.BASE_URL}/mermaid-zoom.js`}></script>

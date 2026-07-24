@@ -1,0 +1,611 @@
+/* ============================================================
+   AWS Study Hub — design tokens
+   ============================================================ */
+
+:root {
+  --ink: #141A22;
+  --ink-soft: #4B5768;
+  --ink-faint: #8894A3;
+  --paper: #F4F5F2;
+  --surface: #FFFFFF;
+  --line: #E2E4E0;
+  --navy: #0B1524;
+  --navy-soft: #16243B;
+  --amber: #FF9900;
+  --amber-deep: #B8600A;
+  --teal: #14B8A6;
+  --teal-deep: #0D7A6F;
+  --indigo: #6366F1;
+  --rose: #E85D6F;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-feature-settings: "ss01" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+::selection {
+  background: rgba(255, 153, 0, 0.25);
+  color: var(--ink);
+}
+
+a { color: inherit; }
+
+/* ---------------------------------------------------------
+   Reading progress bar
+   --------------------------------------------------------- */
+#progress-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: transparent;
+  z-index: 60;
+}
+#progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--amber), var(--teal));
+  transition: width 0.1s linear;
+}
+
+/* ---------------------------------------------------------
+   Header
+   --------------------------------------------------------- */
+.site-header {
+  background: var(--navy);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.header-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: #F4F5F2;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.header-cert-nav {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.header-cert-nav a {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  color: rgba(244,245,242,0.65);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.header-cert-nav a:hover {
+  color: #F4F5F2;
+  border-color: rgba(255,255,255,0.15);
+}
+
+.header-cert-nav a.active {
+  background: rgba(255,153,0,0.14);
+  color: var(--amber);
+  border-color: rgba(255,153,0,0.35);
+}
+
+/* ---------------------------------------------------------
+   Page shell
+   --------------------------------------------------------- */
+#app {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 5rem;
+}
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 2rem 1.5rem 3rem;
+  text-align: center;
+}
+.site-footer p {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+#content {
+  animation: fadeIn 0.35s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.layout-container {
+  display: flex;
+  gap: 2.5rem;
+  /* align-items defaults to "stretch": aside must be as tall as the
+     (long) article next to it, or the sticky nav inside it runs out
+     of room to stick after one screen of scrolling. */
+}
+
+aside { flex-shrink: 0; width: 260px; }
+main.doc { flex: 1; min-width: 0; }
+
+/* ---------------------------------------------------------
+   Sidebar TOC — sticky within the full height of `aside`
+   (which now stretches to match the article), so it stays
+   pinned for the whole read, not just the first screen.
+   --------------------------------------------------------- */
+aside nav {
+  position: sticky;
+  top: 5.5rem;
+  max-height: calc(100vh - 8rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+aside nav::-webkit-scrollbar { width: 5px; }
+aside nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+.toc-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 0.9rem;
+}
+
+.toc-section { margin-bottom: 0.35rem; }
+
+.toc-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.toc-section-title:hover { background: var(--surface); }
+.toc-section-title .domain-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 0.72rem;
+  color: var(--amber-deep);
+}
+
+.toc-subsection {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding-left: 1.05rem;
+  border-left: 1px solid var(--line);
+}
+.toc-subsection li { margin: 0; }
+.toc-subsection a {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  border-radius: 5px;
+  transition: all 0.15s;
+}
+.toc-subsection a:hover { color: var(--teal-deep); background: var(--surface); }
+.toc-subsection a.active {
+  color: var(--teal-deep);
+  background: rgba(20,184,166,0.08);
+  font-weight: 500;
+}
+
+/* ---------------------------------------------------------
+   Domain weight bar — signature element.
+   Segmented bar reflecting real exam-domain weightings;
+   doubles as quick navigation into each domain.
+   --------------------------------------------------------- */
+.weight-bar-wrap {
+  margin-bottom: 2rem;
+}
+.weight-bar {
+  display: flex;
+  width: 100%;
+  height: 2.75rem;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.weight-bar a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  transition: filter 0.15s;
+  position: relative;
+}
+.weight-bar a:hover { filter: brightness(1.08); }
+.weight-bar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin-top: 0.7rem;
+}
+.weight-bar-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+}
+.weight-bar-legend i {
+  width: 8px; height: 8px; border-radius: 2px; display: inline-block;
+}
+
+/* ---------------------------------------------------------
+   Home hero — pipeline motif
+   --------------------------------------------------------- */
+.hero {
+  padding: 2.5rem 0 3rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2.5rem;
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--amber-deep);
+  margin-bottom: 0.9rem;
+}
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin-bottom: 0.9rem;
+  max-width: 30ch;
+}
+.hero p.lead {
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  line-height: 1.6;
+}
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  margin-top: 2.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.pipeline-node {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  width: 108px;
+  text-align: center;
+}
+.pipeline-node .dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 3px solid var(--navy);
+}
+.pipeline-node span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  line-height: 1.3;
+}
+.pipeline-connector {
+  flex: 1;
+  min-width: 24px;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px);
+  margin: 0 -4px 1.6rem;
+}
+
+/* ---------------------------------------------------------
+   Cert cards (home)
+   --------------------------------------------------------- */
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.cert-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.3rem 1.4rem;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+.cert-card:hover {
+  border-color: var(--amber);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(20,20,20,0.06);
+}
+.cert-card .code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--amber-deep);
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem;
+  display: block;
+}
+.cert-card .name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--ink);
+}
+.cert-card .status {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------
+   Content card / markdown body
+   --------------------------------------------------------- */
+.content-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 2.25rem 2.5rem;
+}
+
+.markdown-body {
+  font-family: 'Inter', sans-serif;
+  line-height: 1.75;
+  color: var(--ink);
+  max-width: 78ch;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  scroll-margin-top: 6rem;
+}
+.markdown-body h1 { font-size: 1.9rem; margin-bottom: 1.25rem; padding-bottom: 0.6rem; border-bottom: 2px solid var(--navy); }
+.markdown-body h2 { font-size: 1.5rem; margin-top: 2.75rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
+.markdown-body h3 { font-size: 1.2rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--teal-deep); }
+.markdown-body h4 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.6rem; color: var(--amber-deep); text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.85rem; }
+
+.markdown-body p { margin: 0 0 1.1rem; color: var(--ink); }
+.markdown-body ul, .markdown-body ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+.markdown-body li { margin: 0.35rem 0; }
+.markdown-body li::marker { color: var(--amber-deep); }
+
+.markdown-body strong { color: var(--navy); font-weight: 600; }
+
+.markdown-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: #FFF3E0;
+  color: var(--amber-deep);
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+}
+
+.markdown-body pre {
+  background: var(--navy);
+  color: #E5E9F0;
+  padding: 1.2rem 1.4rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.4rem 0;
+  font-size: 0.83rem;
+  line-height: 1.6;
+}
+.markdown-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 1em;
+}
+
+.markdown-body blockquote {
+  margin: 1.4rem 0;
+  padding: 0.9rem 1.2rem;
+  border-left: 3px solid var(--teal);
+  background: rgba(20,184,166,0.06);
+  border-radius: 0 6px 6px 0;
+  color: var(--ink-soft);
+}
+.markdown-body blockquote p:last-child { margin-bottom: 0; }
+
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 2.25rem 0;
+}
+
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.4rem 0;
+  font-size: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.markdown-body th, .markdown-body td {
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--line);
+  text-align: left;
+}
+.markdown-body th {
+  background: var(--navy);
+  color: #F4F5F2;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.markdown-body tr:nth-child(even) td { background: var(--paper); }
+
+.markdown-body a {
+  color: var(--teal-deep);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(13,122,111,0.3);
+}
+.markdown-body a:hover { border-bottom-color: var(--teal-deep); }
+
+/* Mermaid — pan/zoom canvas + toolbar + fullscreen modal */
+.mermaid-wrap {
+  position: relative;
+  margin: 1.6rem 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.mermaid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+.mermaid-toolbar button {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  line-height: 1.1;
+  transition: all 0.15s ease;
+}
+.mermaid-toolbar button:hover {
+  border-color: var(--amber);
+  color: var(--amber-deep);
+}
+.mermaid-canvas {
+  min-height: 380px;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+}
+.mermaid-canvas:active { cursor: grabbing; }
+.mermaid-canvas svg { display: block; width: 100%; height: 100%; }
+.mermaid { line-height: 0; }
+
+.mermaid-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 21, 36, 0.75);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.mermaid-modal {
+  background: var(--surface);
+  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.mermaid-modal .mermaid-toolbar { justify-content: space-between; }
+.mermaid-modal .mermaid-canvas { flex: 1; height: auto; }
+.mermaid-modal-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+}
+
+/* ---------------------------------------------------------
+   Error state
+   --------------------------------------------------------- */
+.error-card {
+  background: var(--surface);
+  border: 1px solid var(--rose);
+  border-radius: 10px;
+  padding: 2rem;
+}
+.error-card h2 { font-family: 'Space Grotesk', sans-serif; color: var(--rose); margin-bottom: 0.5rem; }
+
+/* ---------------------------------------------------------
+   Responsive
+   --------------------------------------------------------- */
+@media (max-width: 860px) {
+  .layout-container { flex-direction: column; }
+  aside { width: 100%; }
+  aside nav { position: static; max-height: none; }
+  .content-card { padding: 1.5rem; }
+  .header-inner { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #content, .cert-card, .weight-bar a { animation: none !important; transition: none !important; }
+}
+
+/* Spoiler / answer reveal */
+.markdown-body details { margin: 0.5rem 0; border: 1px solid var(--line); border-radius: 6px; }
+.markdown-body details summary { cursor: pointer; padding: 0.5rem 0.75rem; font-weight: 600; color: var(--teal); user-select: none; }
+.markdown-body details summary:hover { background: var(--line); }
+.markdown-body details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 0.5rem; }
+.markdown-body details > :not(summary) { padding: 0 0.75rem; }

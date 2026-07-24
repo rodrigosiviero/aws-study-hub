@@ -1,0 +1,17 @@
+{
+  "name": "aws-study-hub",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "astro": "^4.16.0",
+    "mermaid": "^11.4.0",
+    "svg-pan-zoom": "^3.6.1",
+    "unist-util-visit": "^5.0.0"
+  }
+}

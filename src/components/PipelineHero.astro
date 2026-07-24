@@ -1,0 +1,26 @@
+---
+const stages = [
+  { label: 'Sources', color: '#FF9900' },
+  { label: 'Ingestion', color: '#14B8A6' },
+  { label: 'Transformation', color: '#6366F1' },
+  { label: 'Storage', color: '#E85D6F' },
+  { label: 'Governance', color: '#0D7A6F' },
+];
+---
+
+<section class="hero">
+    <p class="hero-eyebrow">AWS Certification Guides</p>
+    <h1>Study AWS with the same logic as a data pipeline</h1>
+    <p class="lead">Condensed content from official exam guides — straight to the point, organized by domain and exam weight.</p>
+    <div class="pipeline">
+        {stages.map((s, i) => (
+            <>
+                {i > 0 && <div class="pipeline-connector"></div>}
+                <div class="pipeline-node">
+                    <div class="dot" style={`background:${s.color}`}></div>
+                    <span>{s.label}</span>
+                </div>
+            </>
+        ))}
+    </div>
+</section>

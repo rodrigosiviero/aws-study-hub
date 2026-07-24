@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  activeSlug?: string;
+  description?: string;
+}
+
+const { title, activeSlug = 'home', description = 'Guias de estudo para certificações AWS, baseados nos exam guides oficiais.' } = Astro.props;
+
+const certs = (await getCollection('certs')).sort((a, b) => a.data.order - b.data.order);
+const base = import.meta.env.BASE_URL;
+---
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title} — AWS Study Hub</title>
+    <meta name="description" content={description}>
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a href={base} class="brand">
+                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="3.2" fill="#FF9900"/>
+                    <circle cx="24" cy="6" r="3.2" fill="#14B8A6"/>
+                    <circle cx="15" cy="24" r="3.2" fill="#F4F5F2" fill-opacity="0.9"/>
+                    <path d="M6 6L15 24M24 6L15 24M6 6L24 6" stroke="#F4F5F2" stroke-width="1.4" stroke-opacity="0.55"/>
+                </svg>
+                <span>AWS Study Hub</span>
+            </a>
+            <nav class="header-cert-nav">
+                <a href={base} class:list={{ active: activeSlug === 'home' }}>Home</a>
+                {certs.map((c) => (
+                    <a href={`${base}/${c.slug}/`} class:list={{ active: activeSlug === c.slug }}>
+                        {c.data.code ?? c.data.title}
+                    </a>
+                ))}
+            </nav>
+        </div>
+    </header>
+
+    <main id="app">
+        <slot />
+    </main>
+
+    <footer class="site-footer">
+        <p>Unofficial study material, based on public AWS exam guides · For personal review only</p>
+    </footer>
+
+    <script src="../scripts/page.js"></script>
+</body>
+</html>

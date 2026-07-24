@@ -1,0 +1,49 @@
+---
+import { domainColors, type TocSection } from '../lib/toc';
+
+interface Props {
+  toc: TocSection[];
+}
+
+const { toc } = Astro.props;
+const withWeights = toc.filter((s) => s.weight !== null);
+---
+
+<aside>
+    <nav>
+        <p class="toc-label">In this guide</p>
+
+        {withWeights.length > 0 && (
+            <div class="weight-bar-wrap">
+                <div class="weight-bar">
+                    {withWeights.map((s, i) => (
+                        <a href={`#${s.slug}`} style={`width:${s.weight}%; background:${domainColors[i % domainColors.length]}`} title={`${s.title} — ${s.weight}%`}>
+                            {s.weight}%
+                        </a>
+                    ))}
+                </div>
+                <div class="weight-bar-legend">
+                    {withWeights.map((s, i) => (
+                        <span><i style={`background:${domainColors[i % domainColors.length]}`}></i>{s.title}</span>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {toc.map((section) => (
+            <div class="toc-section">
+                <a href={`#${section.slug}`} class="toc-section-title">
+                    {section.weight !== null && <span class="domain-num">{section.weight}%</span>}
+                    {section.title}
+                </a>
+                {section.subsections.length > 0 && (
+                    <ul class="toc-subsection">
+                        {section.subsections.map((task) => (
+                            <li><a href={`#${task.slug}`} data-toc-link={task.slug}>{task.title}</a></li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        ))}
+    </nav>
+</aside>

@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PipelineHero from '../components/PipelineHero.astro';
+import CertGrid from '../components/CertGrid.astro';
+---
+
+<BaseLayout title="Home" activeSlug="home" description="Study guides for AWS certifications, based on official exam guides.">
+    <PipelineHero />
+    <div class="markdown-body">
+        <CertGrid />
+        <h2>Como usar</h2>
+        <ul>
+            <li>Pick a certification above to open the full guide.</li>
+            <li>Each guide shows the weight of each domain — click the bar to jump to that section.</li>
+            <li>Diagrams support zoom and pan — use the toolbar buttons or the fullscreen button.</li>
+            <li>Use Ctrl+F to search for a specific term on the page.</li>
+        </ul>
+    </div>
+</BaseLayout>
