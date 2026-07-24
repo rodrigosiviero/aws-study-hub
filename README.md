@@ -1,92 +1,106 @@
-# AWS Study Hub — Astro
+# AWS Study Hub
 
-Migração da versão estática (HTML + JS vanilla) para [Astro](https://astro.build). Mesmo visual,
-mesmo deploy no GitHub Pages — só troca o "motor" por trás.
+Static study guides for AWS certifications, built with [Astro](https://astro.build/).
 
-## O que mudou em relação à versão anterior
+Content is sourced from official AWS exam guides and rendered at build time —
+no client-side markdown parsing, no framework JS on the page beyond mermaid diagrams.
 
-- **Conteúdo é build-time, não runtime.** Antes o navegador buscava o `.md` via `fetch()` e
-  renderizava na hora com `marked.js`. Agora o Astro já gera o HTML final no build — mais rápido,
-  funciona sem JS, e dá pra ver o conteúdo no "ver código-fonte" (bom pra SEO/compartilhamento).
-- **URLs viraram páginas de verdade.** `?cert=dea` virou `/dea/`. Voltar/avançar do navegador,
-  compartilhar link direto pra um guia, tudo funciona nativamente — sem JS de rota customizado.
-- **Sidebar/TOC/weight-bar** são geradas a partir dos headings que o próprio Astro já extrai do
-  Markdown (com `id` via `github-slugger`), em vez de um regex de slug feito à mão — elimina a
-  classe inteira de bug "id do menu não bate com o id do heading" que a gente caçou na versão
-  anterior.
-- **Scroll suave nativo.** `scroll-behavior: smooth` + `scroll-margin-top` no CSS fazem o scroll
-  do clique no menu funcionar sem nenhum JavaScript de clique customizado (não tem mais risco de
-  dois listeners brigando entre si).
-- **Mermaid vira SVG real com zoom e pan.** Os diagramas agora têm uma barra de zoom (+/−/reset),
-  arrastar com o mouse, e um botão "Expandir" que abre em tela cheia — via `svg-pan-zoom`.
-- **Tailwind CDN saiu.** O CSS já cobria quase tudo sozinho; o pouco que dependia do Tailwind
-  virou CSS puro em `src/styles/global.css`.
+**Live:** https://rodrigosiviero.github.io/aws-study-hub/
 
-## Rodando localmente
+## Certifications
+
+| Code | Status |
+|------|--------|
+| DEA-C01 (Data Engineer) | ✅ Complete |
+| SAA-C03 (Solutions Architect) | 🚧 Coming soon |
+| DVA-C02 (Developer) | 🚧 Coming soon |
+| SOA-C02 (SysOps) | 🚧 Coming soon |
+
+## Getting Started
 
 ```bash
 npm install
-npm run dev        # http://localhost:4321
-npm run build      # gera ./dist
-npm run preview    # serve o ./dist gerado, pra conferir antes de publicar
+npm run dev      # http://localhost:4321/aws-study-hub/
+npm run build    # outputs to ./dist
+npm run preview  # serve ./dist locally
 ```
 
-## ⚠️ Antes do primeiro deploy: ajuste o `base`
+## Project Structure
 
-Abra `astro.config.mjs` e troque:
-
-```js
-site: 'https://your-username.github.io',
-base: '/data-engineer',
+```
+src/
+  content/certs/          # One .md per certification (frontmatter + markdown)
+  components/             # Sidebar, CertGrid, PipelineHero
+  layouts/BaseLayout.astro
+  lib/
+    toc.ts                # Builds sidebar TOC + weight bar from headings
+    remark-mermaid.mjs    # Transforms ```mermaid blocks into zoomable diagrams
+  pages/
+    index.astro           # Home / cert picker
+    [slug]/index.astro    # Dynamic route: /dea/, /saa/, etc.
+  styles/global.css
+  scripts/
+    page.js               # Progress bar + scroll spy
+public/
+  mermaid-zoom.js         # Mermaid + svg-pan-zoom via CDN (runtime)
+  favicon.svg
 ```
 
-- Se o repositório se chama `data-engineer` e o Pages publica em
-  `https://SEU-USUARIO.github.io/data-engineer/`, só troque `your-username`.
-- Se for um repositório de **usuário/organização** (`SEU-USUARIO.github.io`, publicado na raiz),
-  troque `base` para `'/'`.
+## Adding a Certification Guide
 
-Sem isso, os links e assets vão apontar pro caminho errado em produção.
-
-## Deploy
-
-O workflow em `.github/workflows/deploy.yml` já faz tudo: instala dependências, builda com
-`npm run build` e publica `./dist` no GitHub Pages. Só habilitar Pages → "GitHub Actions" como
-source nas configurações do repositório (Settings → Pages).
-
-## Adicionando conteúdo
-
-Cada certificação é um arquivo em `src/content/certs/`, com frontmatter:
+1. Create `src/content/certs/<slug>.md`:
 
 ```md
 ---
 title: "AWS Certified Solutions Architect – Associate"
 code: "SAA-C03"
-status: "coming-soon"   # ou "complete"
-description: "..."
+status: "coming-soon"   # "complete" or "coming-soon"
+description: "Design resilient, high-performing, secure architectures on AWS."
 order: 2
 ---
 
-# conteúdo em markdown normal daqui pra baixo
+# Content here (standard markdown)
 ```
 
-- `##` viram domínios (a barra de peso só aparece se o título terminar em `(NN%)`).
-- `###` viram tasks na sidebar.
-- Blocos de código com \`\`\`mermaid viram diagramas com zoom/pan automaticamente.
+2. Set `status: "complete"` when done. The home page shows a badge accordingly.
 
-## Estrutura
+### Content conventions
 
-```
-src/
-  content/certs/       ← os guias (markdown + frontmatter)
-  layouts/BaseLayout.astro
-  components/          ← Sidebar, PipelineHero, CertGrid
-  lib/
-    toc.ts              ← monta a sidebar/weight-bar a partir dos headings
-    remark-mermaid.mjs  ← transforma ```mermaid em diagramas com toolbar, no build
-  scripts/
-    mermaid-zoom.js     ← renderiza mermaid + liga o zoom/pan/fullscreen
-    page.js             ← barra de progresso + scroll-spy
-  pages/
-    index.astro         ← home
-    [slug]/index.astro  ← rota dinâmica: /dea/, /saa/, /dva/, /soa/
-```
+- `##` headings become domains in the sidebar. Append `(NN%)` to show a weight bar (e.g. `## Domain 1: Data Ingestion (34%)`).
+- `###` headings become subsections.
+- `` ```mermaid `` fenced blocks render as interactive diagrams with zoom, pan, and fullscreen.
+- Practice questions use `<details><summary>Answer</summary>...</details>` for spoiler-style reveals.
+
+## Contributing
+
+1. Fork the repo.
+2. Create a branch: `git checkout -b add-<cert-name>`.
+3. Add or update content under `src/content/certs/`.
+4. Run `npm run build` — it must pass with zero errors.
+5. Open a PR against `main`.
+
+### Content guidelines
+
+- Source everything from official AWS exam guides or AWS documentation.
+- Keep answers objective — no fluff.
+- Use comparison tables over prose when contrasting services.
+- Include ` ```mermaid ``` ` diagrams for architectures and flows.
+
+## Deployment
+
+GitHub Actions deploys to GitHub Pages on every push to `main`.
+
+Workflow: `.github/workflows/deploy.yml` — checkout, npm ci, build, upload artifact, deploy.
+
+No configuration needed beyond enabling Pages → Source: **GitHub Actions** in repo settings.
+
+## Tech Stack
+
+- **Astro 4** — static site generator
+- **Mermaid 11** — diagrams (loaded via CDN at runtime)
+- **svg-pan-zoom** — diagram zoom/pan
+- **GitHub Actions** — CI/CD
+
+## License
+
+MIT
