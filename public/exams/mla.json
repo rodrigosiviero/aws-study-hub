@@ -1,0 +1,735 @@
+{
+  "code": "MLA-C01",
+  "title": "AWS Certified Machine Learning Engineer – Associate",
+  "totalQuestions": 50,
+  "timeLimit": 130,
+  "passingScore": 720,
+  "domains": [
+    {
+      "id": 1,
+      "name": "Data Preparation for Machine Learning",
+      "weight": 28,
+      "count": 14
+    },
+    {
+      "id": 2,
+      "name": "ML Model Development",
+      "weight": 26,
+      "count": 13
+    },
+    {
+      "id": 3,
+      "name": "Deployment and Orchestration of ML Workflows",
+      "weight": 22,
+      "count": 11
+    },
+    {
+      "id": 4,
+      "name": "ML Solution Monitoring, Maintenance, and Security",
+      "weight": 24,
+      "count": 12
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "domain": 1,
+      "question": "A company stores a 20 TB tabular training dataset in S3. Training jobs only read a subset of columns. Which format minimizes storage and scan cost?",
+      "options": [
+        "CSV",
+        "JSON",
+        "Apache Parquet",
+        "RecordIO"
+      ],
+      "correct": 2,
+      "explanation": "Parquet is columnar and compressed, so engines can read only required columns. CSV and JSON require broader parsing; RecordIO is record-oriented.",
+      "anchor": "#task-11-ingest-and-store-data"
+    },
+    {
+      "id": 2,
+      "domain": 1,
+      "question": "A data scientist needs one centralized set of customer features for both batch training and low-latency inference. Which SageMaker capability is best?",
+      "options": [
+        "Data Wrangler",
+        "Feature Store",
+        "Model Registry",
+        "Model Monitor"
+      ],
+      "correct": 1,
+      "explanation": "Feature Store provides an offline store for training/batch workflows and an online store for low-latency feature retrieval, reducing training-serving skew.",
+      "anchor": "#task-11-ingest-and-store-data"
+    },
+    {
+      "id": 3,
+      "domain": 1,
+      "question": "A stream requires multiple consumers, ordered records per shard, and replay capability. Which service should be selected?",
+      "options": [
+        "Amazon Data Firehose",
+        "Amazon Kinesis Data Streams",
+        "Amazon SQS",
+        "AWS Lambda"
+      ],
+      "correct": 1,
+      "explanation": "Kinesis Data Streams retains records for replay and supports multiple consumers. Firehose is managed delivery rather than a replayable consumer stream.",
+      "anchor": "#task-11-ingest-and-store-data"
+    },
+    {
+      "id": 4,
+      "domain": 1,
+      "question": "A processing job must join large S3 datasets from several systems and run custom distributed transformations. Which service is appropriate?",
+      "options": [
+        "AWS Glue or Amazon EMR with Spark",
+        "Amazon Route 53",
+        "AWS Secrets Manager",
+        "Amazon CloudFront"
+      ],
+      "correct": 0,
+      "explanation": "Glue provides managed serverless Spark ETL; EMR provides more Spark cluster control. Both support distributed joins and transformations.",
+      "anchor": "#task-11-ingest-and-store-data"
+    },
+    {
+      "id": 5,
+      "domain": 1,
+      "question": "Training instances need concurrent shared POSIX access to a file system. Which storage option fits?",
+      "options": [
+        "Amazon S3",
+        "Amazon EBS",
+        "Amazon EFS",
+        "Amazon DynamoDB"
+      ],
+      "correct": 2,
+      "explanation": "EFS is an elastic shared POSIX file system. EBS is block storage attached to an instance; S3 is object storage.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 6,
+      "domain": 1,
+      "question": "An image-classification project has unlabeled images and needs a managed human-labeling workflow. Which service should be used?",
+      "options": [
+        "SageMaker Ground Truth",
+        "SageMaker Clarify",
+        "Amazon Rekognition",
+        "AWS Config"
+      ],
+      "correct": 0,
+      "explanation": "SageMaker Ground Truth creates labeled datasets with human workers and active learning. Clarify analyzes bias/explanations after data/model preparation.",
+      "anchor": "#task-12-transform-data-and-perform-feature-engineering"
+    },
+    {
+      "id": 7,
+      "domain": 1,
+      "question": "A numeric feature has extreme positive values and a heavily right-skewed distribution. Which transformation commonly reduces this skew?",
+      "options": [
+        "One-hot encoding",
+        "Log transformation",
+        "Label encoding",
+        "Tokenization"
+      ],
+      "correct": 1,
+      "explanation": "A log transformation compresses large positive values and often makes long-tailed distributions easier to model. Encoding techniques are for categorical/text data.",
+      "anchor": "#task-12-transform-data-and-perform-feature-engineering"
+    },
+    {
+      "id": 8,
+      "domain": 1,
+      "question": "A nominal column has values red, green, and blue, with no meaningful ordering. Which encoding is normally appropriate?",
+      "options": [
+        "Label encoding",
+        "One-hot encoding",
+        "Min-max scaling",
+        "Binning"
+      ],
+      "correct": 1,
+      "explanation": "One-hot encoding avoids introducing a false ordinal relationship. Label encoding is safer for ordinal categories or some tree-based workflows with careful handling.",
+      "anchor": "#task-12-transform-data-and-perform-feature-engineering"
+    },
+    {
+      "id": 9,
+      "domain": 1,
+      "question": "A classifier reports 98% accuracy but almost never detects the rare fraud class. What data issue should be investigated first?",
+      "options": [
+        "Class imbalance",
+        "Data encryption",
+        "S3 lifecycle policy",
+        "Endpoint autoscaling"
+      ],
+      "correct": 0,
+      "explanation": "Class imbalance can make accuracy misleading. Evaluate recall, precision, and F1 for the rare class and consider resampling, class weights, or synthetic data.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 10,
+      "domain": 1,
+      "question": "Which SageMaker service analyzes pre-training bias metrics and can explain model predictions?",
+      "options": [
+        "SageMaker Clarify",
+        "SageMaker Neo",
+        "SageMaker Ground Truth",
+        "SageMaker Inference Recommender"
+      ],
+      "correct": 0,
+      "explanation": "SageMaker Clarify supports pre-training bias, post-training bias, and feature attribution/explainability. Neo compiles models for edge targets.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 11,
+      "domain": 1,
+      "question": "A team calculates normalization parameters using the full dataset before splitting it into train and test sets. What is the primary risk?",
+      "options": [
+        "Data leakage",
+        "Insufficient KMS permissions",
+        "Over-provisioned storage",
+        "Network throttling"
+      ],
+      "correct": 0,
+      "explanation": "Using test-set information while fitting preprocessing leaks future evaluation information into training. Fit preprocessing on the training set only, then apply it to validation/test data.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 12,
+      "domain": 1,
+      "question": "A model processes historical events where later records must not influence earlier predictions. Which split strategy is correct?",
+      "options": [
+        "Random split",
+        "Stratified random split",
+        "Time-aware split",
+        "Duplicate all records"
+      ],
+      "correct": 2,
+      "explanation": "A time-aware split preserves chronology and prevents future information from leaking into training. Random splits can leak future patterns for temporal data.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 13,
+      "domain": 1,
+      "question": "A training job cannot read SSE-KMS encrypted S3 input despite having s3:GetObject. What permission is commonly missing?",
+      "options": [
+        "kms:Decrypt on the KMS key",
+        "ec2:RunInstances",
+        "cloudwatch:PutMetricData",
+        "s3:PutBucketPolicy"
+      ],
+      "correct": 0,
+      "explanation": "SSE-KMS access requires both S3 access and KMS key permission such as kms:Decrypt through IAM/key policy.",
+      "anchor": "#task-13-ensure-data-integrity-and-prepare-data-for-modeling"
+    },
+    {
+      "id": 14,
+      "domain": 1,
+      "question": "A team needs visual no-code profiling, cleaning, and transformation of tabular data. Which AWS service is designed for this?",
+      "options": [
+        "AWS Glue DataBrew",
+        "Amazon ECR",
+        "AWS CloudTrail",
+        "Amazon SNS"
+      ],
+      "correct": 0,
+      "explanation": "Glue DataBrew provides visual no-code data preparation. Data Wrangler is ML-focused and also valid for SageMaker workflows, but DataBrew directly fits this requirement.",
+      "anchor": "#task-12-transform-data-and-perform-feature-engineering"
+    },
+    {
+      "id": 15,
+      "domain": 2,
+      "question": "A company needs managed translation between languages and does not need custom model training. What is the best service?",
+      "options": [
+        "Amazon Translate",
+        "Amazon Bedrock",
+        "SageMaker training job",
+        "Amazon EMR"
+      ],
+      "correct": 0,
+      "explanation": "Amazon Translate is the managed AI service for language translation. Training a custom model adds unnecessary operational work for this standard use case.",
+      "anchor": "#task-21-choose-a-modeling-approach"
+    },
+    {
+      "id": 16,
+      "domain": 2,
+      "question": "A binary classifier must minimize false negatives because missed disease cases are costly. Which metric should receive high priority?",
+      "options": [
+        "Recall",
+        "Precision",
+        "RMSE",
+        "Accuracy only"
+      ],
+      "correct": 0,
+      "explanation": "Recall measures the fraction of actual positives that are detected. High recall reduces false negatives; precision focuses on false positives.",
+      "anchor": "#task-23-analyze-model-performance"
+    },
+    {
+      "id": 17,
+      "domain": 2,
+      "question": "A model has excellent training metrics but substantially worse validation metrics. What is the likely problem?",
+      "options": [
+        "Overfitting",
+        "Underfitting",
+        "Data encryption",
+        "Endpoint throttling"
+      ],
+      "correct": 0,
+      "explanation": "A large train-validation gap is a classic overfitting signal. Consider regularization, more data, augmentation, early stopping, or a simpler model.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 18,
+      "domain": 2,
+      "question": "A team needs to search hyperparameters efficiently based on results from previous trials. Which method best fits?",
+      "options": [
+        "Bayesian optimization",
+        "Manual deployment",
+        "S3 replication",
+        "Round-robin routing"
+      ],
+      "correct": 0,
+      "explanation": "Bayesian optimization uses prior trial outcomes to select promising configurations, often reducing expensive training trials. SageMaker Automatic Model Tuning supports managed tuning workflows.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 19,
+      "domain": 2,
+      "question": "What is the purpose of early stopping during training?",
+      "options": [
+        "Stop when validation performance no longer improves",
+        "Encrypt model artifacts",
+        "Scale endpoint instances",
+        "Create labels automatically"
+      ],
+      "correct": 0,
+      "explanation": "Early stopping halts training when the monitored validation metric stops improving, saving cost and helping limit overfitting.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 20,
+      "domain": 2,
+      "question": "A team uses custom PyTorch code for training. Which SageMaker capability supports this most directly?",
+      "options": [
+        "Script mode",
+        "Batch Transform",
+        "Feature Store online store",
+        "SageMaker Neo"
+      ],
+      "correct": 0,
+      "explanation": "SageMaker script mode supports custom training scripts with supported frameworks such as PyTorch and TensorFlow.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 21,
+      "domain": 2,
+      "question": "A company needs a traceable model approval process with versions, metadata, and promotion states. Which service should be used?",
+      "options": [
+        "SageMaker Model Registry",
+        "SageMaker Ground Truth",
+        "Amazon CloudFront",
+        "AWS Lambda"
+      ],
+      "correct": 0,
+      "explanation": "Model Registry tracks model package versions, metadata, approval status, and supports governed promotion into deployment workflows.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 22,
+      "domain": 2,
+      "question": "A regression model must penalize large prediction errors more than small errors. Which metric is appropriate?",
+      "options": [
+        "RMSE",
+        "Recall",
+        "ROC-AUC",
+        "F1 score"
+      ],
+      "correct": 0,
+      "explanation": "RMSE squares errors before aggregation, so large errors have greater impact. Recall/F1/ROC-AUC are classification metrics.",
+      "anchor": "#task-23-analyze-model-performance"
+    },
+    {
+      "id": 23,
+      "domain": 2,
+      "question": "A team needs a managed foundation model for text summarization without hosting model infrastructure. Which service is appropriate?",
+      "options": [
+        "Amazon Bedrock",
+        "Amazon EBS",
+        "AWS Glue",
+        "Amazon Route 53"
+      ],
+      "correct": 0,
+      "explanation": "Amazon Bedrock provides managed access to foundation models for inference and customization. It avoids hosting the model infrastructure directly.",
+      "anchor": "#task-21-choose-a-modeling-approach"
+    },
+    {
+      "id": 24,
+      "domain": 2,
+      "question": "A model performs poorly on both training and validation datasets. What condition is most likely?",
+      "options": [
+        "Underfitting",
+        "Overfitting",
+        "Data drift",
+        "Canary release"
+      ],
+      "correct": 0,
+      "explanation": "Poor training and validation performance suggests underfitting. Consider higher model capacity, better features, more training, or less regularization.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 25,
+      "domain": 2,
+      "question": "Which technique randomly disables neural-network units during training to reduce co-adaptation?",
+      "options": [
+        "Dropout",
+        "One-hot encoding",
+        "Batch Transform",
+        "Canary deployment"
+      ],
+      "correct": 0,
+      "explanation": "Dropout is a regularization technique that randomly disables units during training to improve generalization.",
+      "anchor": "#task-22-train-and-refine-models"
+    },
+    {
+      "id": 26,
+      "domain": 2,
+      "question": "A candidate model should receive production-like requests without affecting customer responses. Which strategy should be used?",
+      "options": [
+        "Shadow testing",
+        "Blue/green cutover",
+        "Batch Transform",
+        "Model pruning"
+      ],
+      "correct": 0,
+      "explanation": "Shadow testing sends production-like traffic to a candidate model while the production model remains customer-facing. It enables safe comparison.",
+      "anchor": "#task-23-analyze-model-performance"
+    },
+    {
+      "id": 27,
+      "domain": 2,
+      "question": "A team needs to identify exploding gradients and tensor-level training issues. Which SageMaker capability helps?",
+      "options": [
+        "SageMaker Debugger",
+        "SageMaker Ground Truth",
+        "AWS Budgets",
+        "Amazon Macie"
+      ],
+      "correct": 0,
+      "explanation": "SageMaker Debugger captures and analyzes training tensors and rules to help diagnose convergence issues such as exploding or vanishing gradients.",
+      "anchor": "#task-23-analyze-model-performance"
+    },
+    {
+      "id": 28,
+      "domain": 3,
+      "question": "A workload scores millions of S3 records every night and does not require interactive responses. Which inference option is best?",
+      "options": [
+        "SageMaker Batch Transform",
+        "Real-time endpoint",
+        "Serverless inference",
+        "Multi-model endpoint"
+      ],
+      "correct": 0,
+      "explanation": "Batch Transform processes datasets in bulk without keeping a persistent endpoint running, which fits scheduled offline scoring.",
+      "anchor": "#task-31-select-deployment-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 29,
+      "domain": 3,
+      "question": "An inference request contains a large payload and processing can take several minutes. Which SageMaker deployment type fits?",
+      "options": [
+        "Asynchronous inference",
+        "Real-time endpoint only",
+        "SageMaker Neo",
+        "Model Registry"
+      ],
+      "correct": 0,
+      "explanation": "Asynchronous inference queues long-running or large-payload requests and writes output to S3. Real-time endpoints are designed for lower-latency synchronous calls.",
+      "anchor": "#task-31-select-deployment-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 30,
+      "domain": 3,
+      "question": "An application has infrequent unpredictable traffic and wants no instance management for a small model. Which option is suitable?",
+      "options": [
+        "Serverless inference",
+        "Provisioned real-time endpoint only",
+        "Amazon EFS",
+        "AWS Glue DataBrew"
+      ],
+      "correct": 0,
+      "explanation": "Serverless inference automatically scales for intermittent traffic without managing instances. Consider startup and model/runtime constraints.",
+      "anchor": "#task-31-select-deployment-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 31,
+      "domain": 3,
+      "question": "A new model must receive 10% of traffic first and be rolled back if errors or latency rise. Which approach is best?",
+      "options": [
+        "Canary deployment using production variants",
+        "Replace the endpoint in place",
+        "Delete the old model",
+        "Run Batch Transform"
+      ],
+      "correct": 0,
+      "explanation": "A canary deployment routes a small percentage of traffic to the new variant and supports measured promotion or rollback.",
+      "anchor": "#task-31-select-deployment-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 32,
+      "domain": 3,
+      "question": "A team needs repeatable SageMaker endpoints, roles, alarms, and VPC resources across environments. Which practice is best?",
+      "options": [
+        "Infrastructure as code with CloudFormation or CDK",
+        "Manual console deployment",
+        "Store IDs in notebooks",
+        "Use one shared production endpoint"
+      ],
+      "correct": 0,
+      "explanation": "CloudFormation or CDK version the infrastructure and make environments repeatable. Manual console setup is difficult to audit and reproduce.",
+      "anchor": "#task-32-create-and-script-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 33,
+      "domain": 3,
+      "question": "A real-time endpoint must increase capacity as requests per instance rise. Which capability should be configured?",
+      "options": [
+        "SageMaker endpoint autoscaling",
+        "S3 lifecycle policy",
+        "Glue crawler",
+        "IAM Access Analyzer"
+      ],
+      "correct": 0,
+      "explanation": "Endpoint autoscaling can use metrics such as InvocationsPerInstance, latency, or CPU utilization to adjust capacity.",
+      "anchor": "#task-32-create-and-script-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 34,
+      "domain": 3,
+      "question": "A SageMaker endpoint needs private access to an internal database. What configuration is required?",
+      "options": [
+        "Place the endpoint in VPC subnets with appropriate security groups",
+        "Enable public S3 access",
+        "Use CloudFront",
+        "Create an SNS topic"
+      ],
+      "correct": 0,
+      "explanation": "VPC configuration with suitable subnets, routes, and security groups enables private connectivity to internal resources.",
+      "anchor": "#task-32-create-and-script-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 35,
+      "domain": 3,
+      "question": "A workflow must run preprocessing, training, evaluation, conditional registration, and deployment as an ML-native DAG. Which service is best?",
+      "options": [
+        "SageMaker Pipelines",
+        "Amazon CloudFront",
+        "AWS IAM",
+        "Amazon Route 53"
+      ],
+      "correct": 0,
+      "explanation": "SageMaker Pipelines natively orchestrates ML workflow steps, including condition-based model registration and deployment decisions.",
+      "anchor": "#task-33-use-automated-orchestration-tools-to-set-up-cicd-pipelines"
+    },
+    {
+      "id": 36,
+      "domain": 3,
+      "question": "A CI pipeline must run unit tests and build a container image before model deployment. Which service runs these build steps?",
+      "options": [
+        "AWS CodeBuild",
+        "AWS CodeDeploy",
+        "Amazon EventBridge",
+        "Amazon S3"
+      ],
+      "correct": 0,
+      "explanation": "CodeBuild runs tests and builds artifacts/images. CodePipeline orchestrates stages; CodeDeploy handles supported deployment actions.",
+      "anchor": "#task-33-use-automated-orchestration-tools-to-set-up-cicd-pipelines"
+    },
+    {
+      "id": 37,
+      "domain": 3,
+      "question": "A retraining pipeline should run monthly and also when a drift alert occurs. Which service can trigger both schedules and event-based workflows?",
+      "options": [
+        "Amazon EventBridge",
+        "Amazon ECR",
+        "AWS KMS",
+        "Amazon EFS"
+      ],
+      "correct": 0,
+      "explanation": "EventBridge supports scheduled rules and event routing. It can trigger SageMaker Pipelines or Step Functions for retraining workflows.",
+      "anchor": "#task-33-use-automated-orchestration-tools-to-set-up-cicd-pipelines"
+    },
+    {
+      "id": 38,
+      "domain": 3,
+      "question": "A model team has hundreds of models using the same container and only a few are invoked at any time. Which endpoint pattern can reduce endpoint sprawl?",
+      "options": [
+        "Multi-model endpoint",
+        "One endpoint per model",
+        "Batch Transform only",
+        "SageMaker Ground Truth"
+      ],
+      "correct": 0,
+      "explanation": "Multi-model endpoints dynamically load models from S3 into a shared endpoint/container, suitable for many similar infrequently used models.",
+      "anchor": "#task-31-select-deployment-infrastructure-based-on-architecture-and-requirements"
+    },
+    {
+      "id": 39,
+      "domain": 4,
+      "question": "Production input feature distributions now differ from the training baseline. What condition is this?",
+      "options": [
+        "Data drift",
+        "Model registry approval",
+        "Endpoint blue/green deployment",
+        "Model compression"
+      ],
+      "correct": 0,
+      "explanation": "Data drift is a change in production input data distribution compared with the training/baseline data. It can affect model quality.",
+      "anchor": "#task-41-monitor-model-inference"
+    },
+    {
+      "id": 40,
+      "domain": 4,
+      "question": "Which SageMaker capability monitors production data quality and model-quality constraint violations?",
+      "options": [
+        "SageMaker Model Monitor",
+        "SageMaker Ground Truth",
+        "SageMaker Neo",
+        "SageMaker JumpStart"
+      ],
+      "correct": 0,
+      "explanation": "Model Monitor detects data quality, model quality, bias drift, and feature attribution drift issues against configured baselines.",
+      "anchor": "#task-41-monitor-model-inference"
+    },
+    {
+      "id": 41,
+      "domain": 4,
+      "question": "A team needs request latency, endpoint errors, and custom operational alarms. Which service is central to this?",
+      "options": [
+        "Amazon CloudWatch",
+        "Amazon S3 Glacier",
+        "AWS Glue DataBrew",
+        "Amazon Mechanical Turk"
+      ],
+      "correct": 0,
+      "explanation": "CloudWatch provides metrics, logs, dashboards, and alarms for endpoint/infrastructure monitoring and operational response.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 42,
+      "domain": 4,
+      "question": "A model endpoint is expensive because it remains running overnight with no traffic. What is the most direct first action?",
+      "options": [
+        "Stop/delete unused endpoint or use a suitable on-demand pattern",
+        "Increase instance count",
+        "Enable more CloudTrail trails",
+        "Use larger EBS volumes"
+      ],
+      "correct": 0,
+      "explanation": "Persistent real-time endpoints accrue cost while provisioned. Remove unused endpoints or select serverless, asynchronous, or batch inference when requirements permit.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 43,
+      "domain": 4,
+      "question": "Which tool analyzes historical AWS spending by service, tag, and time period?",
+      "options": [
+        "AWS Cost Explorer",
+        "Amazon CloudWatch",
+        "AWS CodeDeploy",
+        "Amazon ECR"
+      ],
+      "correct": 0,
+      "explanation": "Cost Explorer analyzes and forecasts costs by dimensions such as service, account, tag, and period. Budgets adds threshold alerts.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 44,
+      "domain": 4,
+      "question": "An organization needs an alert before ML project spending exceeds a monthly target. Which service should it use?",
+      "options": [
+        "AWS Budgets",
+        "SageMaker Debugger",
+        "Amazon X-Ray",
+        "AWS Config"
+      ],
+      "correct": 0,
+      "explanation": "AWS Budgets sets cost or usage thresholds and sends alerts. Cost Explorer analyzes costs but does not provide the primary budget-alert workflow.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 45,
+      "domain": 4,
+      "question": "A user can access an encrypted S3 bucket but a SageMaker training job fails to read objects. Which two permissions should be considered?",
+      "options": [
+        "S3 data access and KMS decrypt permission",
+        "CloudFront and Route 53",
+        "Glue and EMR admin",
+        "SNS publish and subscribe"
+      ],
+      "correct": 0,
+      "explanation": "For SSE-KMS objects, the training role needs S3 access and permission to use the KMS key, including kms:Decrypt where appropriate.",
+      "anchor": "#task-43-secure-aws-resources"
+    },
+    {
+      "id": 46,
+      "domain": 4,
+      "question": "Which identity pattern is best for a SageMaker training job accessing AWS resources?",
+      "options": [
+        "An IAM execution role with least privilege",
+        "Hard-coded long-term access keys",
+        "Root account credentials",
+        "A public bucket policy"
+      ],
+      "correct": 0,
+      "explanation": "Use a least-privilege IAM execution role. Do not embed static credentials or use root credentials for workload access.",
+      "anchor": "#task-43-secure-aws-resources"
+    },
+    {
+      "id": 47,
+      "domain": 4,
+      "question": "A security team must know who changed a production endpoint configuration and when. Which service provides the audit trail?",
+      "options": [
+        "AWS CloudTrail",
+        "Amazon CloudFront",
+        "SageMaker Feature Store",
+        "AWS DataSync"
+      ],
+      "correct": 0,
+      "explanation": "CloudTrail records API and management events, including identities, time, source IP, and actions related to endpoint changes.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 48,
+      "domain": 4,
+      "question": "A model service calls several downstream services and needs end-to-end request tracing. Which AWS service helps?",
+      "options": [
+        "AWS X-Ray",
+        "AWS Budgets",
+        "SageMaker Clarify",
+        "Amazon Macie"
+      ],
+      "correct": 0,
+      "explanation": "X-Ray traces requests through distributed applications and helps identify latency or failure points across service boundaries.",
+      "anchor": "#task-42-monitor-and-optimize-infrastructure-and-costs"
+    },
+    {
+      "id": 49,
+      "domain": 4,
+      "question": "An endpoint must reach private resources but must not be publicly exposed. Which design is appropriate?",
+      "options": [
+        "Private VPC subnets and restrictive security groups",
+        "Public endpoint with open security group",
+        "Public S3 bucket",
+        "Disable IAM policies"
+      ],
+      "correct": 0,
+      "explanation": "Private subnets and restrictive security groups isolate ML resources. Add only required routes/VPC endpoints and apply least-privilege IAM.",
+      "anchor": "#task-43-secure-aws-resources"
+    },
+    {
+      "id": 50,
+      "domain": 4,
+      "question": "A candidate model should only be promoted automatically if it meets a defined evaluation threshold. Where should this gate be implemented?",
+      "options": [
+        "A conditional step in SageMaker Pipelines",
+        "An S3 lifecycle rule",
+        "A CloudTrail trail",
+        "An ECR repository policy"
+      ],
+      "correct": 0,
+      "explanation": "A SageMaker Pipelines condition step can evaluate a metric and register/promote only models that meet the defined threshold.",
+      "anchor": "#task-33-use-automated-orchestration-tools-to-set-up-cicd-pipelines"
+    }
+  ]
+}
