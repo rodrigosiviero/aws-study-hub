@@ -87,7 +87,7 @@ graph TB
     S3 --> CF
     EC --> RDS
     DDB --> RDS
-
+```
 
 ## Exam Overview
 
