@@ -732,7 +732,7 @@ graph TB
 
 #### Skill 3.1.2: CloudFormation and CDK
 
-**CloudFormation:"
+**CloudFormation:"**
 - Declarative IaC — describe desired state, AWS creates it.
 - Stack: collection of resources managed as a unit.
 - Change sets: preview changes before applying.
@@ -748,20 +748,20 @@ graph TB
 - Supports both self-managed and service-managed permissions.
 - Use with AWS Organizations for multi-account provisioning.
 
-**AWS CDK (Cloud Development Kit):"
+**AWS CDK (Cloud Development Kit):"**
 - Define infrastructure using TypeScript, Python, Java, etc.
 - Synthesizes to CloudFormation templates.
 - Higher-level constructs (L2, L3) abstract common patterns.
 - **Ponytail:** CDK = less YAML. Use for complex infrastructure.
 
-**AWS RAM (Resource Access Manager):"
+**AWS RAM (Resource Access Manager):"**
 - Share resources across accounts: subnets, Transit Gateways, license manager configs.
 - Share via resource shares (within OU, organization, or specific accounts.
 - Does NOT share: EC2 instances, RDS, S3 buckets (use bucket policies).
 
 #### Skill 3.1.3: Troubleshoot Deployment Issues
 
-**Common CloudFormation errors:"
+**Common CloudFormation errors:"**
 
 | Error | Likely Cause |
 |---|---|
@@ -772,7 +772,7 @@ graph TB
 | Export already exists | Another stack exports the same Output name |
 | Subnet size exhaustion | Not enough IPs in the subnet |
 
-**Subnet sizing:"
+**Subnet sizing:"**
 - /24 = 251 usable IPs (256 - 5 AWS reserved).
 - /25 = 123, /26 = 59, /27 = 27, /28 = 11.
 - ENIs, ALBs, NAT Gateways all consume IPs.
@@ -780,7 +780,7 @@ graph TB
 
 #### Skill 3.1.4: Cross-Region and Cross-Account Provisioning
 
-**Patterns:"
+**Patterns:"**
 
 | Pattern | Mechanism | Use Case |
 |---|---|---|
@@ -818,7 +818,7 @@ graph LR
 
 #### Skill 3.1.6: Third-Party Tools
 
-**Terraform:"
+**Terraform:"**
 - HashiCorp IaC tool, provider-based.
 - State file tracks resources (store in S3 with locking via DynamoDB).
 - `terraform plan` / `apply` / `destroy`.
@@ -830,7 +830,7 @@ graph LR
 
 #### Skill 3.2.1: Systems Manager for Operations
 
-**Key SSM features for CloudOps:"
+**Key SSM features for CloudOps:"**
 
 | Feature | Purpose |
 |---|---|
@@ -843,7 +843,7 @@ graph LR
 | Fleet Manager | UI for fleet management |
 | OpsCenter | Operational item management, tracking |
 
-**SSM Patch Manager:"
+**SSM Patch Manager:"**
 - Patch baselines: define approved patches.
 - Patch groups: tag instances for patching schedules.
 - Compliance reports: see which instances are compliant.
@@ -862,7 +862,7 @@ graph LR
     EB --> SQS2[SQS]
 ```
 
-**Event-driven patterns:"
+**Event-driven patterns:"**
 
 | Trigger | Event Source | Action |
 |---|---|---|
@@ -918,7 +918,7 @@ graph TB
 
 #### Skill 4.1.1: IAM Features
 
-**Key IAM concepts:"
+**Key IAM concepts:"**
 
 | Feature | Description |
 |---|---|
@@ -930,7 +930,7 @@ graph TB
 | Policy conditions | aws:PrincipalOrgID, aws:SourceIp, aws:SourceVpce |
 | IAM roles Anywhere | Use X.509 certs for on-prem workloads to get AWS creds |
 
-**Best practices:"
+**Best practices:"**
 - Never use root account for daily operations.
 - Use groups/policies, not inline policies per user.
 - Enforce MFA on all users (condition key: `aws:MultiFactorAuthPresent`).
@@ -939,32 +939,32 @@ graph TB
 
 #### Skill 4.1.2: Audit Access Issues
 
-**CloudTrail:"
+**CloudTrail:"**
 - Management events: control plane API calls (default, 90 days).
 - Data events: data plane (S3 objects, Lambda invoke) — opt-in.
 - CloudTrail Lake: query trail data with SQL (via Athena).
 - Integration with CloudWatch Logs and EventBridge.
 
-**IAM Access Analyzer:"
+**IAM Access Analyzer:"**
 - Analyzes resource policies to find external access.
 - Identifies: public access, cross-account access, unused permissions.
 - Generates findings → remediate or archive.
 - Supports S3, IAM roles, KMS keys, Lambda, SQS, SNS.
 
-**IAM Policy Simulator:"
+**IAM Policy Simulator:"**
 - Test what actions a user/role CAN do.
 - Evaluate policies without actually making the API call.
 - Identify why access was denied.
 
 #### Skill 4.1.3: Multi-Account Strategies
 
-**AWS Organizations:"
+**AWS Organizations:"**
 - Consolidated billing.
 - Service Control Policies (SCPs): permission boundaries for OUs/accounts.
 - SCPs are **allow lists** (if not explicitly allowed, denied) or **deny lists**.
 - SCPs do NOT grant permissions — they filter what IAM policies allow.
 
-**IAM Identity Center (successor to AWS SSO):"
+**IAM Identity Center (successor to AWS SSO):"**
 - Centralized identity management.
 - SSO to AWS accounts and business apps (Salesforce, Office 365, etc.).
 - Permission sets: map to IAM roles in each account.
@@ -992,14 +992,14 @@ graph TB
 
 #### Skill 4.1.5: Compliance Enforcement
 
-**AWS Config:"
+**AWS Config:"**
 - Records configuration changes over time.
 - Config rules: evaluate resources against desired state (e.g., EBS encrypted, S3 versioning enabled).
 - Conformance packs: collections of rules + remediation actions.
 - Auto-remediation: trigger SSM automation on non-compliant resources.
 - Aggregation: centralize across accounts.
 
-**Compliance patterns:"
+**Compliance patterns:"**
 - Config rule detects non-compliance → SSM auto-remediation → CloudWatch alarm if fails.
 - SCPs to prevent non-compliant resources from being created in the first place.
 - Config conformance packs for standards (CIS, PCI-DSS, SOC2).
@@ -1008,7 +1008,7 @@ graph TB
 
 #### Skill 4.2.1: Data Classification
 
-**Amazon Macie:"
+**Amazon Macie:"**
 - ML-powered PII discovery in S3.
 - Automatically classifies: PII (names, SSN, emails), financial data, credentials.
 - Integration with Lake Formation for data catalog enrichment.
@@ -1016,7 +1016,7 @@ graph TB
 
 #### Skill 4.2.2: Encryption at Rest
 
-**KMS Key Types:"
+**KMS Key Types:"**
 
 | Type | Managed By | Rotation | Use Case |
 |---|---|---|---|
@@ -1025,27 +1025,27 @@ graph TB
 | Customer managed key in external KMS | You (key material in CloudHSM/external) | Manual | Regulatory requirements |
 | Data key (envelope encryption) | KMS generates | N/A | Used to encrypt actual data |
 
-**Envelope encryption:"
+**Envelope encryption:"**
 - KMS generates a data key (plaintext + encrypted).
 - Application uses plaintext data key to encrypt data.
 - Store encrypted data key alongside encrypted data.
 - To decrypt: call KMS to decrypt the data key, then decrypt data.
 - Benefit: data never goes to KMS, only the small key does.
 
-**KMS key policies vs IAM policies:"
+**KMS key policies vs IAM policies:"**
 - CMK key policy is the **primary** access control.
 - Both key policy AND IAM policy must allow the action (default).
 - Can set key policy to allow full access and control via IAM.
 
 #### Skill 4.2.3: Encryption in Transit
 
-**AWS Certificate Manager (ACM):"
+**AWS Certificate Manager (ACM):"**
 - Free SSL/TLS certificates for ALB, CloudFront, API Gateway, Elastic Beanstalk.
 - Auto-renewal.
 - Cannot export private keys (use with AWS services only).
 - For EC2/other: use ACM PCA (Private Certificate Authority) or import.
 
-**TLS best practices:"
+**TLS best practices:"**
 - Enforce HTTPS on ALB (default security policy, redirect HTTP).
 - Use Security Policy 2023-08 on ALB for modern TLS.
 - CloudFront: minimum TLS version, security policy configuration.
@@ -1053,14 +1053,14 @@ graph TB
 
 #### Skill 4.2.4: Securely Store Secrets
 
-**Secrets Manager:"
+**Secrets Manager:"**
 - Store and rotate secrets (database credentials, API keys).
 - Built-in rotation for RDS, Aurora, Redshift, DocumentDB.
 - Custom rotation via Lambda.
 - Cross-account access via resource policies.
 - Integration with CloudFormation (dynamic references).
 
-**Parameter Store (SSM):"
+**Parameter Store (SSM):"**
 - Store parameters (strings, StringList, SecureString).
 - SecureString = encrypted with KMS.
 - Free tier: 10,000 parameters.
@@ -1068,21 +1068,21 @@ graph TB
 
 #### Skill 4.2.5: Security Findings and Remediation
 
-**Security Hub:"
+**Security Hub:"**
 - Centralized security findings dashboard.
 - Aggregates from: GuardDuty, Inspector, Macie, Config, IAM Access Analyzer.
 - Security standards: CIS AWS Foundations, AWS Foundational Security Best Practices.
 - Automated remediation with Config rules and SSM runbooks.
 - Integration with EventBridge for custom workflows.
 
-**GuardDuty:"
+**GuardDuty:"**
 - Threat detection service (no agents needed for most).
 - Detects: compromised credentials, unusual API calls, crypto mining, IAM anomalies.
 - S3 protection: detect malicious access patterns.
 - EKS protection: runtime monitoring of containers.
 - Findings flow to Security Hub.
 
-**Amazon Inspector:"
+**Amazon Inspector:"**
 - Automated vulnerability scanning.
 - EC2 instances: OS and package vulnerabilities.
 - ECR images: container image vulnerabilities.
@@ -1138,7 +1138,7 @@ graph TB
 
 #### Skill 5.1.1: Configure a VPC
 
-**VPC components:"
+**VPC components:"**
 
 | Component | Layer | Stateful? | Use |
 |---|---|---|---|
@@ -1148,7 +1148,7 @@ graph TB
 | NAT Gateway | Subnet | N/A | Private subnet → internet (outbound only) |
 | Egress-only IGW | VPC | N/A | IPv6 outbound only (IPv6 NAT equivalent) |
 
-**Key differences: SG vs NACL:"
+**Key differences: SG vs NACL:"**
 
 | | Security Group | Network ACL |
 |---|---|---|
@@ -1158,37 +1158,37 @@ graph TB
 | Evaluation | All rules evaluated together | Numbered, first match wins |
 | Default | Deny inbound, allow outbound | Allow all inbound and outbound |
 
-**Subnet design:"
+**Subnet design:"**
 - Public: route table has route to Internet Gateway.
 - Private: no IGW route. Use NAT Gateway for outbound internet.
 - Isolated: no IGW, no NAT. For databases, internal services.
 
 #### Skill 5.1.2: Private Networking Connectivity
 
-**VPC Endpoints:"
+**VPC Endpoints:"**
 
 | Type | Routes traffic via | AWS services | Cross-VPC |
 |---|---|---|---|
 | Gateway (S3, DynamoDB) | Route table entry | S3, DynamoDB | No |
 | Interface (PrivateLink) | ENI with private IP | Most AWS services | Yes |
 
-**Gateway endpoints:"
+**Gateway endpoints:"**
 - Free (no hourly charge, only data processing).
 - Added to route table: `pl-xxxxx` → s3 or dynamodb.
 - Keeps S3/DynamoDB traffic off the internet.
 
-**Interface endpoints (PrivateLink):"
+**Interface endpoints (PrivateLink):"**
 - Creates an ENI with a private IP in your VPC.
 - Powered by AWS PrivateLink.
 - Access services like CloudWatch, SSM, KMS, EventBridge, etc.
 - **Ponytail:** PrivateLink is blocked by company policy. Use Interface endpoints within the same VPC; on-prem → AWS via public internet.
 
-**VPC Peering:"
+**VPC Peering:"**
 - Direct network connection between two VPCs (same or different accounts/Regions).
 - Non-transitive: A peered to B, B peered to C ≠ A can reach C.
 - Must not have overlapping CIDR ranges.
 
-**Transit Gateway:"
+**Transit Gateway:"**
 - Hub-and-spoke connectivity for 1000s of VPCs, VPNs, and Direct Connects.
 - Transitive routing by default.
 - Route tables per attachment to control traffic flow.
@@ -1197,31 +1197,31 @@ graph TB
 
 #### Skill 5.1.3: Network Protection Services
 
-**AWS Network Firewall:"
+**AWS Network Firewall:"**
 - Stateful, layer 7 inspection.
 - Rules: 5-tuple (protocol, source/dest IP/port, direction).
 - Stateful rules: domain filtering, Suricata-compatible IPS rules.
 - Deployed in each AZ (firewall subnet).
 - Integrates with Route 53 Resolver DNS Firewall.
 
-**Route 53 Resolver DNS Firewall:"
+**Route 53 Resolver DNS Firewall:"**
 - Domain-level filtering for DNS queries.
 - Blocklists, allowlists, domain override rules.
 - Protects against DNS exfiltration and malware C2 domains.
 
-**AWS WAF:"
+**AWS WAF:"**
 - Web application firewall for ALB, CloudFront, API Gateway, Cognito.
 - Web ACLs with rules: IP sets, regex, geo, rate-based, bot control, managed rule groups.
 - Bot Control: manage bots (verified, common, suspicious).
 - Account takeover prevention (for Cognito).
 
-**AWS Shield:"
+**AWS Shield:"**
 - Standard (free): automatic DDoS protection for all AWS customers.
 - Advanced (paid): DDoS response team (DRT), enhanced protection, financial protection.
 
 #### Skill 5.1.4: Optimize Network Cost
 
-**Cost optimization techniques:"
+**Cost optimization techniques:"**
 - Use VPC endpoints (Gateway) instead of NAT Gateway for S3/DynamoDB — free.
 - Evaluate NAT Gateway data processing charges ($0.045/GB).
 - Use VPC peering (cheaper than VPN for same-Region).
@@ -1233,7 +1233,7 @@ graph TB
 
 #### Skill 5.2.1: Route 53 Resolver
 
-**Route 53 Resolver:"
+**Route 53 Resolver:"**
 - Automatically resolves DNS for VPC resources (instances, ELBs, etc.).
 - **Inbound endpoint:** forward DNS queries from on-prem to Route 53 (hybrid DNS).
 - **Outbound endpoint:** forward VPC DNS queries to on-prem DNS.
@@ -1252,13 +1252,13 @@ graph TB
 | Multivalue | Return multiple IPs | DNS-level load balancing |
 | IP-based | Route by client IP (CIDR) | Enterprise network routing |
 
-**Health checks:"
+**Health checks:"**
 - Monitor endpoint health (HTTP, HTTPS, TCP).
 - Integrate with failover routing.
 - Route 53 health checkers are global (from multiple locations).
 - Can alarm on health check failure via CloudWatch.
 
-**Query logging:"
+**Query logging:"**
 - Log DNS queries to CloudWatch Logs, S3, or Kinesis Data Firehose.
 - Useful for: troubleshooting, security analysis, audit.
 
@@ -1273,7 +1273,7 @@ graph TB
 | Static IPs | No (CNAME) | Yes (2 anycast IPs) |
 | DDoS | Shield Standard + WAF | Shield Advanced included |
 
-**CloudFront key concepts:"
+**CloudFront key concepts:"**
 - **Origin:** S3, ALB, HTTP server, or other.
 - **Origin Failover:** primary + secondary origin.
 - **Behaviors:** path-based routing (e.g., `/api/*` → API origin, `/*` → S3).
@@ -1287,7 +1287,7 @@ graph TB
 
 #### Skill 5.3.1: Troubleshoot VPC Configurations
 
-**Troubleshooting flowchart:"
+**Troubleshooting flowchart:"**
 
 ```mermaid
 graph TD
@@ -1306,7 +1306,7 @@ graph TD
     K -->|Yes| M[Check instance OS firewall]
 ```
 
-**VPC Reachability Analyzer:"
+**VPC Reachability Analyzer:"**
 - Analyzes path between source and destination.
 - Checks: route tables, security groups, NACLs, gateways.
 - Returns whether path is reachable and what blocks it.
@@ -1321,7 +1321,7 @@ graph TD
 | CloudFront Logs | HTTP requests to distributions | Distribution |
 | WAF Logs | Web ACL traffic | Web ACL |
 
-**VPC Flow Logs:"
+**VPC Flow Logs:"**
 - Capture: source/dest IP, ports, protocol, action (ACCEPT/REJECT), bytes, packets.
 - Destination: S3 or CloudWatch Logs.
 - Cannot filter at capture time — use CloudWatch Logs Insights or Athena for analysis.
@@ -1329,7 +1329,7 @@ graph TD
 
 #### Skill 5.3.3: CloudFront Caching Issues
 
-**Common caching problems:"
+**Common caching problems:"**
 
 | Problem | Cause | Fix |
 |---|---|---|
@@ -1339,7 +1339,7 @@ graph TD
 | High origin load | Cache miss rate high | Increase TTL, add Origin Shield |
 | CORS errors | Missing headers | Add CORS headers to CloudFront behavior |
 
-**Troubleshooting steps:"
+**Troubleshooting steps:"**
 1. Check `X-Cache` header: `Hit from cloudfront` (cached) vs `Miss from cloudfront` (origin).
 2. Check TTL settings in cache behavior.
 3. Check if query strings, cookies, or headers are forwarded (may prevent caching).
@@ -1347,13 +1347,13 @@ graph TD
 
 #### Skill 5.3.4: Hybrid Connectivity
 
-**Site-to-Site VPN:"
+**Site-to-Site VPN:"**
 - IPsec VPN tunnel from on-prem to VPC.
 - Two tunnels for redundancy.
 - Uses Virtual Private Gateway (VGW) or Transit Gateway.
 - **Speed:** up to 10 Gbps (depends on encryption and internet).
 
-**Troubleshooting VPN:"
+**Troubleshooting VPN:"**
 - Check tunnel status in VPC console.
 - IKE errors: mismatched pre-shared key, IKE versions.
 - Phase 1/2 failures: firewall blocking UDP 500/4500.
@@ -1361,7 +1361,7 @@ graph TD
 
 #### Skill 5.3.5: CloudWatch Network Monitoring
 
-**Network metrics:"
+**Network metrics:"**
 - VPC Flow Logs → CloudWatch Logs Insights for analysis.
 - ELB metrics: RequestCount, TargetResponseTime, HTTPCode_Backend_5xx.
 - NAT Gateway metrics: ActiveConnectionCount, BytesOutToDestination, ErrorPortAllocation.
@@ -1400,98 +1400,161 @@ graph TD
 
 ## Practice Questions
 
-<details>
-<summary>Q1: Your EC2 instances in a private subnet need to download patches from the internet. The NAT Gateway in the AZ has failed. What is the FASTEST way to restore connectivity while you investigate the NAT Gateway failure?</summary>
+**Q1.** Your EC2 instances in a private subnet need to download patches from the internet. The NAT Gateway in the AZ has failed. What is the FASTEST way to restore connectivity?
+- A. Create a new NAT Gateway in the same AZ
+- B. Update the route table to point to a NAT Gateway in another AZ
+- C. Launch a bastion host in the public subnet
+- D. Enable VPC endpoints for the patch repositories
 
-A. Create a new NAT Gateway in the same AZ
-B. Update the route table to point to a NAT Gateway in another AZ
-C. Launch a bastion host in the public subnet
-D. Enable VPC endpoints for the patch repositories
+<details><summary>Answer</summary>B — Update the route table to use a NAT Gateway in another AZ. One-command change restores connectivity immediately. A requires provisioning time. C adds complexity. D may not cover all patch sources.</details>
 
-**Answer: B.** Update the route table to use a NAT Gateway in another AZ. This is a one-command change that restores connectivity immediately while you fix the failed one. A requires time to provision and update route tables. C would require SSH tunneling which is more complex. D may not be possible for all patch sources.
+**Q2.** A CloudWatch alarm goes to ALARM state. You configured an SNS topic as the action, but no notification was received. What should you check FIRST?
+- A. CloudWatch alarm evaluation periods
+- B. SNS topic subscription confirmation
+- C. IAM permissions for the alarm
+- D. CloudWatch Logs
 
-</details>
+<details><summary>Answer</summary>B — SNS subscriptions require email confirmation. This is the most common reason for missing notifications. A affects alarm triggering, not delivery. C shows as auth failure in alarm history. D is unrelated.</details>
 
-<details>
-<summary>Q2: A CloudWatch alarm goes to ALARM state. You configured an SNS topic as the action, but no notification was received. What should you check FIRST?</summary>
+**Q3.** You need to ensure all S3 buckets in your organization have versioning enabled. Which combination?
+- A. S3 Bucket Policies + IAM
+- B. AWS Config rule + SSM auto-remediation
+- C. CloudTrail + Lambda
+- D. Trusted Advisor + SNS
 
-A. CloudWatch alarm evaluation periods
-B. SNS topic subscription confirmation
-C. IAM permissions for the alarm
-D. CloudWatch Logs
+<details><summary>Answer</summary>B — Config rule detects non-compliance, SSM auto-remediation enables versioning. A is per-bucket manual. C is reactive. D only detects.</details>
 
-**Answer: B.** SNS subscriptions require email confirmation — the subscriber must click the confirmation link in the email. This is the most common reason for missing notifications. A would affect whether the alarm triggers, not whether the notification is sent. C would show in the alarm history as authorization failure. D is unrelated.
+**Q4.** Aurora PostgreSQL has high CPU. Performance Insights shows a SELECT with a full table scan as the top query. Best first action?
+- A. Scale up the Aurora instance
+- B. Create an index on the filtered column
+- C. Enable RDS Proxy
+- D. Add a read replica
 
-</details>
+<details><summary>Answer</summary>B — Full table scan = missing index. Creating the index is the root-cause fix. A masks the problem. C manages connections, not queries. D helps read scaling but doesn’t fix the slow query.</details>
 
-<details>
-<summary>Q3: You need to ensure that all S3 buckets in your organization have versioning enabled. Which combination of services should you use?</summary>
+**Q5.** You use Terraform. A team member manually changed an EC2 instance type in the console. What is the issue and how to prevent it?
+- A. State file out of sync. Use `terraform refresh` + CloudFormation drift detection.
+- B. Change overwritten on next apply. Enable CloudFormation stack policies.
+- C. State file out of sync. Use `terraform plan` to see drift, then `apply` to reconcile. Prevent with IAM policies restricting console access.
+- D. No issue — Terraform automatically incorporates manual changes.
 
-A. S3 Bucket Policies + IAM
-B. AWS Config rule + SSM auto-remediation
-C. CloudTrail + Lambda
-D. Trusted Advisor + SNS
+<details><summary>Answer</summary>C — Manual changes cause state drift. `plan` shows it, `apply` reconciles. A mentions CloudFormation (irrelevant). B is wrong (Terraform doesn’t use CFN stack policies). D is false.</details>
 
-**Answer: B.** AWS Config rule checks for versioning status. If not enabled, SSM auto-remediation automatically enables it. A requires per-bucket policy management. C is reactive, not enforcement. D only detects, doesn't enforce.
+**Q6.** CloudFront returns 504 Gateway Timeout. Origin is an ALB. Most likely cause?
+- A. CloudFront TTL is too low
+- B. ALB target not responding within CloudFront timeout
+- C. S3 bucket policy denies access
+- D. DNS resolution is failing
 
-</details>
+<details><summary>Answer</summary>B — 504 = origin didn’t respond in time (default 30s). Check ALB target health. A affects caching. C causes 403. D causes DNS errors.</details>
 
-<details>
-<summary>Q4: An Aurora PostgreSQL cluster has high CPU utilization. Performance Insights shows that the top SQL query is a SELECT with a full table scan. What is the best first action?</summary>
+**Q7.** Company policy requires all RDS databases backed up daily with 30-day retention. Which service?
+- A. AWS Config
+- B. AWS Backup
+- C. AWS Lambda
+- D. AWS DMS
 
-A. Scale up the Aurora instance
-B. Create an index on the filtered column
-C. Enable RDS Proxy
-D. Add a read replica
+<details><summary>Answer</summary>B — AWS Backup provides centralized backup plans, schedules, retention, and compliance reporting. A detects non-compliance. C is custom dev. D is for migration.</details>
 
-**Answer: B.** A full table scan means a missing index. Creating an index on the filtered column is the root-cause fix — it reduces CPU by eliminating the scan. A masks the problem. C manages connections, not queries. D helps with read scaling but doesn't fix the slow query.
+**Q8.** A user cannot access an S3 bucket. The bucket policy grants access to their IAM role. What to check?
+- A. S3 versioning status
+- B. IAM role trust policy
+- C. S3 replication configuration
+- D. KMS key policy (if bucket uses SSE-KMS)
 
-</details>
+<details><summary>Answer</summary>D — If SSE-KMS, the KMS key policy must also grant decrypt permissions. Classic exam trap. B is valid only if the user hasn’t assumed the role.</details>
 
-<details>
-<summary>Q5: You are using Terraform to manage AWS resources. A team member manually modified an EC2 instance type in the console. What is the issue and how to prevent it?</summary>
+---
 
-A. The Terraform state file is now out of sync. Use `terraform refresh` and apply CloudFormation drift detection.
-B. The change was overwritten on next `terraform apply`. Enable CloudFormation stack policies.
-C. The Terraform state file is now out of sync. Use `terraform plan` to see the drift, then `terraform apply` to reconcile. To prevent, use SSM State Manager or IAM policies restricting console access.
-D. No issue — Terraform automatically detects and incorporates manual changes.
+## Appendix A: Quick Reference — Service Selection Cheat Sheet
 
-**Answer: C.** Terraform state is the source of truth — manual changes cause state drift. `terraform plan` shows the drift, `apply` reconciles. Prevention: restrict console access or use SSM State Manager. A mentions CloudFormation which is irrelevant to Terraform. B is wrong — Terraform doesn't use CloudFormation stack policies. D is false.
+| Need | Choose |
+|---|---|
+| Metrics, logs, dashboards | Amazon CloudWatch |
+| Container metrics (Prometheus) | Managed Service for Prometheus + Grafana |
+| API call audit trail | AWS CloudTrail |
+| ML-based metric anomaly detection | CloudWatch Anomaly Detection |
+| Automated remediation from alarms | CloudWatch Alarm → EventBridge → SSM/Lambda |
+| Cross-account monitoring | CloudWatch Cross-Account Observability |
+| Run commands on EC2 fleet | SSM Run Command |
+| OS patching at scale | SSM Patch Manager |
+| Secure SSH without open ports | SSM Session Manager |
+| Multi-step remediation | SSM Automation Runbooks |
+| Event routing with content filtering | Amazon EventBridge |
+| Schedule with timezone + DLQ | EventBridge Scheduler |
+| Auto scaling (target tracking) | ASG + Target Tracking Policy |
+| ML-based proactive scaling | ASG Predictive Scaling |
+| Global content caching | Amazon CloudFront |
+| In-memory database caching | Amazon ElastiCache (Redis/Memcached) |
+| RDS connection pooling | Amazon RDS Proxy |
+| Database performance analysis | RDS Performance Insights |
+| Instance right-sizing | AWS Compute Optimizer |
+| Centralized backup management | AWS Backup |
+| Point-in-time DB recovery | RDS PITR / DynamoDB PITR |
+| Fastest DR (zero RTO) | Active/Active Multi-Region |
+| Cheapest DR | Backup & Restore |
+| IaC declarative (AWS-native) | AWS CloudFormation |
+| IaC imperative (TypeScript/Python) | AWS CDK |
+| Multi-account stack deployment | CloudFormation StackSets |
+| Cross-account resource sharing | AWS RAM |
+| AMI/image building automation | EC2 Image Builder |
+| Container image storage | Amazon ECR |
+| Blue/Green deployment | CodeDeploy / ECS / Lambda Aliases |
+| Canary deployment | Lambda weighted alias / ECS canary |
+| Multi-account governance | AWS Organizations + SCPs |
+| Centralized SSO | IAM Identity Center |
+| Least privilege analysis | IAM Access Analyzer |
+| Policy testing without executing | IAM Policy Simulator |
+| Compliance rules + auto-remediation | AWS Config + Conformance Packs |
+| Security findings aggregation | AWS Security Hub |
+| Threat detection (DDoS, crypto mining) | Amazon GuardDuty |
+| Vulnerability scanning (EC2, ECR, Lambda) | Amazon Inspector + Security Agent |
+| PII discovery in S3 | Amazon Macie |
+| Managed SSL/TLS certificates | AWS Certificate Manager (ACM) |
+| Secret rotation | AWS Secrets Manager |
+| Configuration values (non-secrets) | SSM Parameter Store |
+| Encryption key management | AWS KMS |
+| DNS management + health checks | Amazon Route 53 |
+| Global TCP/UDP traffic routing | AWS Global Accelerator |
+| Web application firewall | AWS WAF |
+| Network-level firewall | AWS Network Firewall |
+| DNS-level threat filtering | Route 53 Resolver DNS Firewall |
+| VPC-to-VPC (same Region) | VPC Peering |
+| Hub-and-spoke multi-VPC | Transit Gateway |
+| Private connectivity to AWS services | VPC Endpoints (Gateway / Interface) |
+| Network path analysis | VPC Reachability Analyzer |
+| VPC traffic logging | VPC Flow Logs → S3/CW Logs |
 
-</details>
+---
 
-<details>
-<summary>Q6: A CloudFront distribution returns 504 Gateway Timeout. The origin is an ALB. What is the most likely cause?</summary>
+## Appendix B: Top Changes from SOA-C02 to SOA-C03
 
-A. CloudFront TTL is too low
-B. The ALB target is returning slowly or not responding within the CloudFront timeout
-C. The S3 bucket policy denies access
-D. DNS resolution is failing
+1. **Domain 6 (Cost & Performance)** eliminated — merged into Domain 1.
+2. **Reliability** increased from 16% to 22% — more weight on HA/DR.
+3. **Deployment** increased from 18% to 22% — more weight on IaC/automation.
+4. New services in scope: **Amazon Bedrock**, **AWS DevOps Agent**, **Kiro**, **AWS Health Dashboard**, **AWS Security Agent**, **Amazon S3 Files**.
+5. Removed: **Amazon Q Developer**, **S3 static website hosting**.
+6. Skill 1.1.2 expanded: CloudWatch agent for **ECS and EKS clusters**.
+7. Skill 4.1.3 expanded: multi-account explicitly includes **SCPs** and **IAM Identity Center**.
+8. Skill 4.1.5 expanded: **AWS Config conformance packs** for compliance.
+9. Skill 4.2.5 expanded: **AWS Security Agent** added.
+10. Skill 5.1.2 expanded: explicitly lists **VPC endpoints, PrivateLink, VPC peering**.
+11. Skill 5.3.5 new: **CloudWatch network monitoring services**.
+12. VPNs moved from Domain 4 to Domain 5.
 
-**Answer: B.** 504 means the origin (ALB) didn't respond within CloudFront's timeout (default 30s). Check ALB target health and response times. A affects caching, not timeouts. C would cause 403. D would cause DNS errors, not 504.
+---
 
-</details>
+## Appendix C: Where to Keep Learning
 
-<details>
-<summary>Q7: Your company policy requires that all RDS databases be backed up daily with a 30-day retention. Which AWS service provides centralized management for this requirement?</summary>
+- AWS Operations Blog: https://aws.amazon.com/blogs/operations/
+- AWS Compute Blog: https://aws.amazon.com/blogs/compute/
+- AWS Networking Blog: https://aws.amazon.com/blogs/networking-and-content-delivery/
+- AWS Security Blog: https://aws.amazon.com/blogs/security/
+- What's New on AWS: https://aws.amazon.com/about-aws/whats-new/
+- AWS re:Invent 2025 sessions on YouTube (search for SOA, OPS, NET tracks).
+- AWS Prescriptive Guidance: https://docs.aws.amazon.com/prescriptive-guidance/latest/
+- AWS Well-Architected Operational Excellence Lens: https://docs.aws.amazon.com/wellarchitected/latest/operational-excellence-lens/
 
-A. AWS Config
-B. AWS Backup
-C. AWS Lambda
-D. AWS DMS
+---
 
-**Answer: B.** AWS Backup provides centralized backup management with backup plans, schedules, retention policies, and compliance reporting across all supported services. A can detect non-compliance but doesn't manage backups. C requires custom development. D is for data migration.
-
-</details>
-
-<details>
-<summary>Q8: A user reports they cannot access an S3 bucket. The bucket policy grants access to their IAM role. What should you check?</summary>
-
-A. S3 versioning status
-B. Whether the IAM role has a trust policy allowing the user to assume it
-C. S3 replication configuration
-D. KMS key policy (if bucket uses SSE-KMS)
-
-**Answer: D (or B depending on context).** If the bucket uses SSE-KMS, the KMS key policy must also grant the IAM role decrypt permissions — this is the most common "gotcha." B is also valid if the user hasn't assumed the role. On the exam, check for SSE-KMS first as it's a classic trap.
-
-</details>
+**Good luck on your AWS Certified CloudOps Engineer – Associate (SOA-C03) exam!**
