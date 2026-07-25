@@ -630,16 +630,6 @@ aside nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px
 .exam-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
 .exam-header-left h2 { margin: 0; font-size: 1rem; }
 .exam-header-left .home-stats { text-align:center; color:var(--ink-soft); margin-bottom:1.5rem; font-size:0.9rem; }
-.home-cards { display:flex; gap:1rem; margin:2rem 0; flex-wrap:wrap; }
-.home-card { display:flex; align-items:center; gap:1rem; padding:1.2rem 1.5rem; border:1px solid var(--border); border-radius:0.75rem; text-decoration:none; color:inherit; flex:1; min-width:250px; transition:border-color .2s; }
-.home-card:hover { border-color:var(--accent); }
-.home-card-icon { font-size:2rem; }
-.home-card h3 { margin:0 0 .25rem; font-size:1rem; }
-.home-card p { margin:0; color:var(--ink-soft); font-size:.85rem; }
-.exam-domain-tag { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: var(--teal); color: var(--surface); margin-left: 0.5rem; vertical-align: middle; font-weight: 600; }
-.exam-timer { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--amber-deep); }
-.exam-progress { font-size: 0.85rem; color: var(--ink-soft); }
-
 .exam-question-text { font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.25rem; }
 .exam-options { list-style: none; padding: 0; margin: 0 0 1.5rem; }
 .exam-options li { margin-bottom: 0.5rem; }
