@@ -722,7 +722,6 @@ graph TB
 - Build: install packages, run scripts.
 - Test: run tests (pytest, etc.).
 - Distribute: copy to multiple Regions, share with accounts.
-- **Ponytail:** always use Image Builder over manual AMI baking.
 
 **ECR (Elastic Container Registry):**
 - Stores container images (Docker/OCI).

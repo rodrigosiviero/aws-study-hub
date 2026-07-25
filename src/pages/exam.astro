@@ -18,7 +18,7 @@ const base = import.meta.env.BASE_URL;
 <script>
 (async () => {
     const BASE = document.querySelector('html').dataset.base ?? '/aws-study-hub';
-    // ponytail: inline cert list, no extra fetch
+    // inline cert list
     const certs = [
         {code:"DEA-C01",slug:"dea",status:"complete",title:"AWS Certified Data Engineer – Associate"},
         {code:"SOA-C03",slug:"soa",status:"complete",title:"AWS Certified CloudOps Engineer – Associate"}
@@ -52,7 +52,6 @@ const base = import.meta.env.BASE_URL;
         const byDomain = {};
         exam.questions.forEach(q => { (byDomain[q.domain] ??= []).push(q); });
         const shuffled = Object.values(byDomain).flat().sort(() => Math.random() - 0.5);
-        // ponytail: Fisher-Yates would be proper but sort-shuffle is fine for practice
 
         let idx = 0, answered = 0, correct = 0, startTime = Date.now();
         const answers = new Array(shuffled.length).fill(-1);
@@ -130,7 +129,7 @@ const base = import.meta.env.BASE_URL;
 
         function renderResults() {
             const pct = Math.round((correct / shuffled.length) * 100);
-            const passed = pct >= 72; // ponytail: 720/1000 scaled ≈ 72% raw
+            const passed = pct >= 72; // 720/1000 scaled ≈ 72% raw
 
             let breakdownHtml = exam.domains.map(d => {
                 const dc = domainCorrect[d.id] ?? 0;
