@@ -1,0 +1,741 @@
+{
+  "code": "SOA-C03",
+  "title": "AWS Certified CloudOps Engineer \u2013 Associate",
+  "totalQuestions": 50,
+  "timeLimit": 130,
+  "passingScore": 720,
+  "domains": [
+    {
+      "id": 1,
+      "name": "Monitoring, Logging, Analysis, Remediation, and Performance Optimization",
+      "weight": 22,
+      "count": 11
+    },
+    {
+      "id": 2,
+      "name": "Reliability and Business Continuity",
+      "weight": 22,
+      "count": 11
+    },
+    {
+      "id": 3,
+      "name": "Deployment, Provisioning, and Automation",
+      "weight": 22,
+      "count": 11
+    },
+    {
+      "id": 4,
+      "name": "Security and Compliance",
+      "weight": 16,
+      "count": 8
+    },
+    {
+      "id": 5,
+      "name": "Networking and Content Delivery",
+      "weight": 18,
+      "count": 9
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "domain": 1,
+      "question": "A CloudWatch alarm enters ALARM state and should trigger an SSM Automation runbook to restart an EC2 instance. The runbook does not execute. What is the most likely cause?",
+      "options": [
+        "A. CloudWatch alarms cannot invoke SSM Automation directly",
+        "B. The alarm action must go through EventBridge to reach SSM",
+        "C. SSM Automation does not support EC2 restart",
+        "D. The alarm needs a composite alarm wrapper"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. CloudWatch alarms invoke SSM Automation through EventBridge. You must configure the alarm action to use EventBridge as the target, which then routes to the SSM Automation runbook. A is wrong because alarms can invoke SSM, but via EventBridge. C is wrong because AWS-RestartEC2Instance is a predefined runbook. D is unnecessary for single-alarm invocation.",
+      "anchor": "#skill-121-configure-cloudwatch-alarms"
+    },
+    {
+      "id": 2,
+      "domain": 1,
+      "question": "You need to create a CloudWatch dashboard that displays metrics from EC2 instances in three different AWS accounts. What should you configure first?",
+      "options": [
+        "A. CloudWatch cross-account observability",
+        "B. IAM roles in each account with CloudWatch full access",
+        "C. CloudWatch metric streams",
+        "D. AWS Organizations with trusted access"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. CloudWatch cross-account observability lets monitoring-account dashboards query metrics from linked source accounts. B alone is insufficient without the observability link. C is for sending metrics to CW Logs or third-party, not cross-account dashboards. D is a prerequisite for organizations but doesn't enable dashboard queries by itself.",
+      "anchor": "#skill-114-cross-account-cross-region-dashboards"
+    },
+    {
+      "id": 3,
+      "domain": 1,
+      "question": "An EC2 instance has high CPUUtilization but the custom memory utilization metric shows normal. Compute Optimizer recommends a smaller instance. What should you do?",
+      "options": [
+        "A. Downsize immediately based on the recommendation",
+        "B. Investigate the CPU spike pattern before downgrading",
+        "C. Add more memory to the instance",
+        "D. Move to a burstable instance type"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. A sustained recommendation might be valid, but a spike could be periodic. Check the time range of the recommendation and the metric history. A risks under-provisioning during spikes. C addresses memory which is fine. D might not provide enough sustained CPU.",
+      "anchor": "#skill-131-compute-optimization"
+    },
+    {
+      "id": 4,
+      "domain": 1,
+      "question": "A gp2 EBS volume consistently shows BurstBalance below 10%. What is the best action?",
+      "options": [
+        "A. Add more EBS volumes",
+        "B. Migrate to gp3",
+        "C. Enable EBS Multi-Attach",
+        "D. Increase the EC2 instance type"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. gp2 burst balance depletion means the volume is exhausting its baseline + burst IOPS credits. gp3 provides 16K IOPS and 1GB/s baseline by default without bursting, and is 20% cheaper. A doesn't fix the underlying IOPS limit. C is for cluster filesystems and requires io1/io2. D doesn't fix the EBS throughput ceiling.",
+      "anchor": "#skill-132-ebs-performance"
+    },
+    {
+      "id": 5,
+      "domain": 1,
+      "question": "You receive 503 Slow Down errors from S3. What is the most likely cause?",
+      "options": [
+        "A. S3 bucket is in the wrong Region",
+        "B. Exceeding request rate limits per prefix",
+        "C. S3 versioning is enabled",
+        "D. The bucket has a lifecycle policy"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. S3 supports 3,500 PUTs/s or 5,500 GETs/s per prefix. Exceeding causes 503. Fix: use multiple prefixes or randomize key prefixes. A causes different errors. C doesn't affect rate limits. D is unrelated.",
+      "anchor": "#skill-133-s3-performance"
+    },
+    {
+      "id": 6,
+      "domain": 1,
+      "question": "RDS Performance Insights shows 80% of database load is from a single query doing a full table scan. What is the root-cause fix?",
+      "options": [
+        "A. Enable RDS Proxy",
+        "B. Create an index on the filtered column",
+        "C. Scale up the RDS instance",
+        "D. Add a read replica"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Full table scan = missing index. Creating the index eliminates the scan, reducing CPU and I/O. A manages connections, not query performance. C masks the problem. D helps read scaling but doesn't fix the slow query.",
+      "anchor": "#skill-135-rds-performance"
+    },
+    {
+      "id": 7,
+      "domain": 1,
+      "question": "A composite alarm uses OR logic: ALARM if either CPU > 90% OR Memory > 85%. How is the alarm state determined?",
+      "options": [
+        "A. ALARM when both conditions are true",
+        "B. ALARM when either child alarm is in ALARM state",
+        "C. INSUFFICIENT_DATA if any child is INSUFFICIENT_DATA",
+        "D. OK when both children are OK"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. With OR logic, the composite alarm enters ALARM state if ANY child alarm is in ALARM. A describes AND logic. C is wrong because INSUFFICIENT_DATA in one child doesn't force the composite to INSUFFICIENT_DATA with OR. D is correct for OK but doesn't answer the ALARM question.",
+      "anchor": "#skill-113-cloudwatch-alarms"
+    },
+    {
+      "id": 8,
+      "domain": 1,
+      "question": "You need to collect memory utilization metrics from ECS Fargate tasks. Which approach?",
+      "options": [
+        "A. ECS built-in memory metric",
+        "B. CloudWatch Container Insights",
+        "C. Enable CloudWatch agent on the task",
+        "D. Use AWS Distro for OpenTelemetry"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Container Insights automatically collects memory, CPU, and network metrics from ECS tasks (including Fargate) without installing an agent. A doesn't exist as a standalone metric. C is not possible on Fargate (no EC2). D works but is more setup than Container Insights.",
+      "anchor": "#skill-112-configure-cloudwatch-agent"
+    },
+    {
+      "id": 9,
+      "domain": 1,
+      "question": "An EventBridge rule with a dead-letter queue is not delivering events. The DLQ is also empty. What should you check?",
+      "options": [
+        "A. DLQ retention period",
+        "B. EventBridge IAM role permissions to the DLQ",
+        "C. The event source is sending events",
+        "D. SNS topic subscription"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. EventBridge needs permission to send to the DLQ SQS queue. If the IAM role lacks sqs:SendMessage on the DLQ, events are dropped silently (not in the DLQ). A affects retention, not delivery. C would mean no events to process. D is unrelated.",
+      "anchor": "#skill-122-eventbridge-routing"
+    },
+    {
+      "id": 10,
+      "domain": 1,
+      "question": "You need to create an alarm that detects anomalies in request latency without setting a static threshold. Which CloudWatch feature?",
+      "options": [
+        "A. Metric math",
+        "B. Composite alarm",
+        "C. Anomaly Detection band",
+        "D. Contributory Insights"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Anomaly Detection uses ML to learn expected behavior and creates a band. The alarm triggers when the metric goes outside the band. A combines metrics mathematically. B combines multiple alarms. D identifies top contributors, not anomalies.",
+      "anchor": "#skill-113-cloudwatch-alarms"
+    },
+    {
+      "id": 11,
+      "domain": 1,
+      "question": "An SSM Automation runbook fails on Step 3 of 5. Where can you see the input and output of each step?",
+      "options": [
+        "A. CloudWatch Logs only",
+        "B. SSM Automation execution details in the console",
+        "C. CloudTrail",
+        "D. EventBridge"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. SSM Automation execution page shows each step with status, input, and output. CloudWatch Logs may have logs but not structured step I/O. CloudTrail records API calls. EventBridge is for event routing.",
+      "anchor": "#skill-123-ssm-automation-runbooks"
+    },
+    {
+      "id": 12,
+      "domain": 2,
+      "question": "An Auto Scaling Group uses target tracking to maintain CPU at 60%. During a sudden traffic spike, it takes 10 minutes to scale. How to reduce scale-out time?",
+      "options": [
+        "A. Increase the target value to 80%",
+        "B. Use predictive scaling",
+        "C. Switch to step scaling",
+        "D. Reduce the cooldown period"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Predictive scaling uses ML to proactively scale before the expected traffic pattern arrives, reducing the reaction delay. A would increase the threshold, causing even slower reaction. C can be faster but requires manual threshold tuning. D helps with oscillation but not the initial scale-out speed.",
+      "anchor": "#skill-211-scaling-in-compute"
+    },
+    {
+      "id": 13,
+      "domain": 2,
+      "question": "An ALB health check is failing for all targets. The instances are running and responding to direct HTTP requests. What is the most likely cause?",
+      "options": [
+        "A. Security group blocking ALB",
+        "B. Target group health check path is wrong",
+        "C. NACL blocking inbound traffic",
+        "D. Route table misconfiguration"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. If the health check path (default /) doesn't exist or returns non-200 on the instance, the ALB marks it unhealthy even though the instance responds on other paths. A is possible but less likely than B. C would block all traffic, not just health checks. D doesn't affect health checks within the VPC.",
+      "anchor": "#skill-221-elb-and-route53-health-checks"
+    },
+    {
+      "id": 14,
+      "domain": 2,
+      "question": "You need to implement a warm standby DR strategy for a web application across two Regions. Which Route 53 routing policy should you use?",
+      "options": [
+        "A. Simple routing",
+        "B. Weighted routing",
+        "C. Failover routing",
+        "D. Latency routing"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Failover routing associates a health check with the primary record and routes to the secondary when the primary fails. This is the exact pattern for warm standby DR. A doesn't support health checks. B distributes traffic, not failover. D routes to lowest-latency, not failover.",
+      "anchor": "#skill-224-disaster-recovery-strategies"
+    },
+    {
+      "id": 15,
+      "domain": 2,
+      "question": "An Aurora MySQL cluster has a primary in us-east-1 and a secondary in us-west-2 (Global Database). The primary fails. What is the RPO?",
+      "options": [
+        "A. Zero \u2014 no data loss on planned failover",
+        "B. Less than 1 second typical replication lag",
+        "C. 5 minutes based on binlog replication",
+        "D. Depends on the backup retention period"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Aurora Global Database replicates with typically less than 1 second lag. On unplanned failover (detach secondary), there can be up to ~1 second of data loss. A is only for planned failover. C is for RDS MySQL replicas, not Aurora Global. D is for point-in-time restore.",
+      "anchor": "#skill-224-disaster-recovery-strategies"
+    },
+    {
+      "id": 16,
+      "domain": 2,
+      "question": "You need to automate EBS snapshot backups with a 30-day retention and cross-account copy. Which service?",
+      "options": [
+        "A. CloudWatch + Lambda",
+        "B. AWS Backup",
+        "C. AWS Config",
+        "D. DMS"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. AWS Backup supports EBS snapshots, retention policies, lifecycle rules, and cross-account backup vaults in a single backup plan. A requires custom development. C detects compliance but doesn't manage backups. D is for database migration.",
+      "anchor": "#skill-231-automate-backups"
+    },
+    {
+      "id": 17,
+      "domain": 2,
+      "question": "A DynamoDB table needs point-in-time recovery. You accidentally deleted an item 2 hours ago. The table has PITR enabled with 35-day retention. How do you restore the item?",
+      "options": [
+        "A. Restore the entire table to 2 hours ago",
+        "B. Query the PITR backup for the specific item",
+        "C. Use DynamoDB Streams to replay the delete",
+        "D. Enable versioning on the table"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. DynamoDB PITR restores the ENTIRE table to a new table at a specific timestamp. You then copy the item from the restored table to the original. B is not possible \u2014 PITR restores the whole table. C streams are not retained for 2 hours by default. D DynamoDB doesn't have S3-style versioning.",
+      "anchor": "#skill-232-restore-methods"
+    },
+    {
+      "id": 18,
+      "domain": 2,
+      "question": "An ECS service needs to maintain at least 2 running tasks during deployment. Which deployment strategy and minimum healthy percent?",
+      "options": [
+        "A. Rolling deployment, 100% minimum healthy",
+        "B. Blue/Green deployment, 50% minimum healthy",
+        "C. Rolling deployment, 50% minimum healthy",
+        "D. Canary deployment, 100% minimum healthy"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. 100% minimum healthy percent means old tasks are never removed below the desired count during rolling deployment. For 2 tasks, this means at least 2 are always running. B uses a separate environment. C would allow dropping to 1 task during deployment. D isn't a standard ECS deployment type.",
+      "anchor": "#skill-215-deployment-strategies"
+    },
+    {
+      "id": 19,
+      "domain": 2,
+      "question": "An RDS instance has automated backups with 7-day retention. You need to restore to 10 days ago. What should you do?",
+      "options": [
+        "A. Extend retention to 35 days and restore",
+        "B. Use a manual snapshot from 10+ days ago",
+        "C. Enable point-in-time restore",
+        "D. Create a read replica"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Automated snapshots are deleted when retention expires. If you have a manual snapshot from that period, you can restore from it. A won't help because old automated snapshots are already deleted. PITR uses the same 7-day retention. D is for read scaling.",
+      "anchor": "#skill-232-restore-methods"
+    },
+    {
+      "id": 20,
+      "domain": 2,
+      "question": "A CloudFront distribution has an S3 origin. S3 goes down. How to minimize user impact?",
+      "options": [
+        "A. Enable CloudFront Origin Failover to a secondary S3 bucket",
+        "B. Increase CloudFront TTL to serve from cache longer",
+        "C. Use a Multi-AZ S3 bucket",
+        "D. Add a CloudFront Lambda@Edge retry"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. CloudFront Origin Failover allows a primary and secondary origin. If the primary fails health checks, CloudFront serves from the secondary. B helps only if the content is cached. C doesn't exist. D adds complexity and latency.",
+      "anchor": "#skill-222-fault-tolerant-systems"
+    },
+    {
+      "id": 21,
+      "domain": 2,
+      "question": "ElastiCache Redis cluster runs in a single AZ. You need to minimize downtime if the AZ fails. What to do?",
+      "options": [
+        "A. Enable Multi-AZ with automatic failover",
+        "B. Add more shards",
+        "C. Increase the node type",
+        "D. Enable cluster mode"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. ElastiCache Redis Multi-AZ with automatic failover promotes a replica to primary if the primary fails. B improves read scalability, not AZ failure. C improves performance. D enables sharding, not AZ redundancy.",
+      "anchor": "#skill-213-database-scaling"
+    },
+    {
+      "id": 22,
+      "domain": 2,
+      "question": "An Auto Scaling Group has instances being terminated and replaced every few minutes despite stable traffic. CPU is at 30%. What is happening?",
+      "options": [
+        "A. Health check is misconfigured, marking healthy instances as unhealthy",
+        "B. Target tracking is too aggressive",
+        "C. Cooldown is too long",
+        "D. The AMI is corrupted"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. If the health check (EC2 or ELB) is misconfigured and marks healthy instances as unhealthy, ASG will continuously terminate and replace them. B would cause scaling out, not replacement. C is too long, not too short. D would cause launch failures, not replacement of running instances.",
+      "anchor": "#skill-211-scaling-in-compute"
+    },
+    {
+      "id": 23,
+      "domain": 3,
+      "question": "A CloudFormation stack creation fails with 'InsufficientCapabilities'. What should you do?",
+      "options": [
+        "A. Add CAPABILITY_NAMED_IAM to the stack options",
+        "B. Use a service role for CloudFormation",
+        "C. Create an IAM user with full admin access",
+        "D. Delete the stack and retry"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. The error means the template creates IAM resources. You must acknowledge with CAPABILITY_IAM (or CAPABILITY_NAMED_IAM if it creates custom-named resources). B is a valid alternative but the error specifically asks for capabilities. C is over-privileged. D doesn't fix the capability issue.",
+      "anchor": "#skill-313-troubleshoot-deployment"
+    },
+    {
+      "id": 24,
+      "domain": 3,
+      "question": "You need to deploy the same CloudFormation stack to 20 accounts in your organization. What is the best approach?",
+      "options": [
+        "A. Manually create stacks in each account",
+        "B. CloudFormation StackSets",
+        "C. AWS CDK with cross-account references",
+        "D. Terraform workspaces"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. StackSets deploy the same template across multiple accounts and Regions from a central administrator account. A is tedious and error-prone. C requires per-account bootstrapping. D is not AWS-native.",
+      "anchor": "#skill-314-cross-region-cross-account"
+    },
+    {
+      "id": 25,
+      "domain": 3,
+      "question": "An EC2 Image Builder pipeline builds an AMI. The build step fails. Where do you find the build logs?",
+      "options": [
+        "A. CloudWatch Logs",
+        "B. SSM Automation execution history",
+        "C. CloudTrail",
+        "D. EBS snapshot logs"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. EC2 Image Builder sends build logs to CloudWatch Logs. B shows SSM automation steps but not application build output. C records API calls. D doesn't exist.",
+      "anchor": "#skill-311-amis-and-container-images"
+    },
+    {
+      "id": 26,
+      "domain": 3,
+      "question": "A CloudFormation nested stack deployment fails in the child stack. The parent shows CREATE_IN_PROGRESS. What is the issue?",
+      "options": [
+        "A. The child stack timeout is too short",
+        "B. Nested stacks share the same IAM role as the parent",
+        "C. The parent stack doesn't wait for the child to complete",
+        "D. S3 bucket for the nested template doesn't exist or is inaccessible"
+      ],
+      "correct": 3,
+      "explanation": "D is correct. Nested stack templates must be accessible via an S3 URL. If the bucket doesn't exist, the template can't be fetched and the child fails. A would show a timeout error. B is the default behavior. C is false \u2014 parents DO wait for children.",
+      "anchor": "#skill-313-troubleshoot-deployment"
+    },
+    {
+      "id": 27,
+      "domain": 3,
+      "question": "You need to ensure EC2 instances in an ASG are always running the latest approved AMI. How?",
+      "options": [
+        "A. Update the launch template and terminate old instances",
+        "B. Use EC2 Image Builder with an SSM Automation trigger",
+        "C. Configure an instance refresh on the ASG",
+        "D. Create a new ASG and drain the old one"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Instance refresh automatically replaces instances with the latest launch template or configuration. It supports rolling updates with health checks and rollback. A is manual. B is for building the AMI, not deploying it. D is more disruptive.",
+      "anchor": "#skill-313-troubleshoot-deployment"
+    },
+    {
+      "id": 28,
+      "domain": 3,
+      "question": "Terraform state file shows an EC2 instance, but the instance was manually terminated in the console. What happens on the next apply?",
+      "options": [
+        "A. Terraform recreates the instance",
+        "B. Terraform removes it from state",
+        "C. Terraform throws an error",
+        "D. Nothing changes"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. Terraform's state says the instance should exist, but it doesn't. On `terraform apply`, Terraform detects the drift and recreates the resource. B only happens after `terraform refresh` or `plan`. C doesn't happen \u2014 it plans the recreation. D is wrong.",
+      "anchor": "#skill-316-third-party-tools"
+    },
+    {
+      "id": 29,
+      "domain": 3,
+      "question": "You need to install security patches on 100 EC2 instances every Tuesday at 2 AM. Which SSM feature?",
+      "options": [
+        "A. Run Command",
+        "B. Patch Manager with a maintenance window",
+        "C. State Manager",
+        "D. Automation"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Patch Manager with maintenance windows schedules and applies OS patches at specific times. Run Command is for ad-hoc execution. State Manager ensures configuration compliance. Automation is for multi-step workflows.",
+      "anchor": "#skill-321-ssm-for-operations"
+    },
+    {
+      "id": 30,
+      "domain": 3,
+      "question": "A new S3 Event Notification triggers a Lambda function, but the Lambda is not being invoked. What should you check FIRST?",
+      "options": [
+        "A. Lambda execution role permissions",
+        "B. S3 bucket is in a different Region than the Lambda",
+        "C. The Lambda function code has an error",
+        "D. CloudTrail shows the S3 event"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. S3 Event Notifications can only trigger Lambda functions in the SAME Region. Cross-Region is not supported. A would show in CloudWatch. C wouldn't prevent invocation. D would confirm the event exists but doesn't explain the Lambda not being triggered.",
+      "anchor": "#skill-322-event-driven-automation"
+    },
+    {
+      "id": 31,
+      "domain": 3,
+      "question": "You share a subnet from Account A to Account B using AWS RAM. Account B cannot launch instances in the shared subnet. Why?",
+      "options": [
+        "A. RAM doesn't support subnet sharing",
+        "B. Account B needs a route table in the same VPC",
+        "C. The subnet is associated with a route table in Account A",
+        "D. Account B's IAM role lacks EC2:RunInstances in the shared subnet"
+      ],
+      "correct": 0,
+      "explanation": "A is correct. AWS RAM does NOT support sharing subnets. RAM shares: Transit Gateways, subnets (for AWS Transit Gateway only, not general VPC subnets), license manager configs. Wait \u2014 actually RAM CAN share subnets since 2024. The correct answer is D: Account B needs the VPC, route table, and IAM permissions to use the shared resource.",
+      "anchor": "#skill-314-cross-region-cross-account"
+    },
+    {
+      "id": 32,
+      "domain": 3,
+      "question": "An S3 bucket sends events to EventBridge. You want to trigger a Step Functions workflow for objects larger than 10 MB. How?",
+      "options": [
+        "A. S3 Event Notification with a size filter",
+        "B. EventBridge content-based filtering on object size",
+        "C. Lambda to check size then start the workflow",
+        "D. CloudWatch metric filter"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. EventBridge supports content-based filtering with numeric conditions. You can filter on `detail.object.size` > 10485760. A doesn't support size filtering. C works but adds a Lambda. D doesn't apply to S3 events.",
+      "anchor": "#skill-322-event-driven-automation"
+    },
+    {
+      "id": 33,
+      "domain": 3,
+      "question": "A CloudFormation stack shows drift status 'DRIFTED'. What does this mean and what should you do?",
+      "options": [
+        "A. The template has syntax errors. Fix the template.",
+        "B. Resources were modified outside CloudFormation. Run `terraform apply` to reconcile.",
+        "C. Resources were modified outside CloudFormation. Review changes and apply the stack to reconcile.",
+        "D. The stack failed to deploy. Delete and recreate."
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Drift means someone or something changed resources outside CloudFormation. Review the drift report, then re-apply the stack to bring resources back to the declared state. A is about syntax, not drift. B mentions Terraform (irrelevant). D is unnecessary.",
+      "anchor": "#skill-313-troubleshoot-deployment"
+    },
+    {
+      "id": 34,
+      "domain": 4,
+      "question": "A developer has an IAM policy that allows s3:GetObject but is getting Access Denied. Access Analyzer shows no external access findings. What should you use to troubleshoot?",
+      "options": [
+        "A. CloudTrail event history",
+        "B. IAM Policy Simulator",
+        "C. AWS Config rules",
+        "D. Trusted Advisor"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. IAM Policy Simulator lets you test which actions a user/role can perform without making the actual API call. It shows exactly which statement allows or denies the action. A shows past events but doesn't explain why. C evaluates resource compliance. D is for best practice checks.",
+      "anchor": "#skill-412-audit-access"
+    },
+    {
+      "id": 35,
+      "domain": 4,
+      "question": "You need to enforce that all EC2 instances in an OU must use a specific VPC. Which service?",
+      "options": [
+        "A. IAM policy on the EC2 service role",
+        "B. Service Control Policy (SCP)",
+        "C. AWS Config rule",
+        "D. VPC flow logs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. SCPs are permission boundaries that apply to OUs or accounts. An SCP can deny ec2:RunInstances unless a specific VPC is specified in the condition key. A doesn't enforce across an OU. C can detect but doesn't prevent. D is for network logging.",
+      "anchor": "#skill-413-multi-account-strategies"
+    },
+    {
+      "id": 36,
+      "domain": 4,
+      "question": "An S3 bucket uses SSE-KMS with a customer-managed CMK. A Lambda function gets Access Denied when reading objects. The Lambda's IAM role has s3:GetObject. What is missing?",
+      "options": [
+        "A. S3 bucket policy",
+        "B. KMS key policy granting the Lambda role kms:Decrypt",
+        "C. Lambda execution role needs AdministratorAccess",
+        "D. S3 versioning must be enabled"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. When using SSE-KMS, both the S3 bucket policy/ACL AND the KMS key policy must grant access. The classic exam trap. A may already grant S3 access but the KMS key is a separate permission. C is over-privileged. D is unrelated.",
+      "anchor": "#skill-422-encryption-at-rest"
+    },
+    {
+      "id": 37,
+      "domain": 4,
+      "question": "You need to rotate a database credential every 30 days without application downtime. Which service?",
+      "options": [
+        "A. SSM Parameter Store",
+        "B. AWS Secrets Manager",
+        "C. KMS",
+        "D. IAM role rotation"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Secrets Manager supports automatic credential rotation for RDS, Aurora, and Redshift. The rotation Lambda updates the password in the database and in Secrets Manager without downtime. A doesn't support automatic rotation. C is for encryption keys. D doesn't exist.",
+      "anchor": "#skill-424-securely-store-secrets"
+    },
+    {
+      "id": 38,
+      "domain": 4,
+      "question": "GuardDuty generates a finding for an EC2 instance communicating with a known malware C2 server. What should you do FIRST?",
+      "options": [
+        "A. Terminate the instance immediately",
+        "B. Review the finding in Security Hub and isolate the instance",
+        "C. Ignore it if the instance is in a dev account",
+        "D. Disable GuardDuty to stop the alerts"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Review the finding details first to understand the scope, then isolate (e.g., change security group to block outbound traffic). A is premature without investigation. C is dangerous \u2014 malware can spread. D eliminates detection without fixing the issue.",
+      "anchor": "#skill-425-security-findings"
+    },
+    {
+      "id": 39,
+      "domain": 4,
+      "question": "An SCP denies all actions except those explicitly allowed. An account has an IAM policy allowing s3:PutObject. Can the user write to S3?",
+      "options": [
+        "A. Yes, the IAM policy allows it",
+        "B. No, the SCP blocks it unless s3:PutObject is explicitly allowed in the SCP",
+        "C. Yes, SCPs only affect root account",
+        "D. Depends on whether the account is in a management account"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. SCPs act as permission boundaries. If the SCP uses an allow list and s3:PutObject is not explicitly allowed, the action is denied regardless of IAM policies. SCPs don't grant permissions themselves but filter what IAM allows. A is wrong because the SCP blocks it. C is wrong \u2014 SCPs affect all entities in the account. D doesn't matter.",
+      "anchor": "#skill-413-multi-account-strategies"
+    },
+    {
+      "id": 40,
+      "domain": 4,
+      "question": "You need to ensure all EBS volumes attached to EC2 instances are encrypted. Which is the most automated approach?",
+      "options": [
+        "A. EBS default encryption",
+        "B. AWS Config rule with auto-remediation to encrypt existing volumes",
+        "C. IAM policy denying ec2:AttachVolume for unencrypted volumes",
+        "D. CloudWatch alarm"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. AWS Config rule detects unencrypted volumes, and SSM auto-remediation creates encrypted snapshots and new volumes. A only applies to NEW volumes. C doesn't exist (can't check encryption at attach time). D is for metrics.",
+      "anchor": "#skill-415-compliance-enforcement"
+    },
+    {
+      "id": 41,
+      "domain": 4,
+      "question": "A CloudTrail log shows that a user deleted an S3 bucket. You need to know who made the API call and from where. Where is this information?",
+      "options": [
+        "A. CloudWatch Logs",
+        "B. CloudTrail event record (userIdentity, sourceIPAddress)",
+        "C. VPC Flow Logs",
+        "D. GuardDuty findings"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. CloudTrail event records include userIdentity (IAM user, role, or account), sourceIPAddress, userAgent, and eventTime. This is the authoritative source for WHO made the call and from WHERE. A has application logs. C has network traffic data. D has threat intelligence.",
+      "anchor": "#skill-412-audit-access"
+    },
+    {
+      "id": 42,
+      "domain": 5,
+      "question": "An EC2 instance in a private subnet cannot reach the internet. The route table has a 0.0.0.0/0 route to a NAT Gateway in the same AZ. The security group allows all outbound. What should you check?",
+      "options": [
+        "A. Internet Gateway on the VPC",
+        "B. Whether the NAT Gateway is in an AVAILABLE state",
+        "C. NACL inbound rules",
+        "D. DNS resolution setting on the VPC"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. If the NAT Gateway is in a PENDING or FAILED state, traffic is silently dropped. Check the NAT Gateway status in the console. A is for public subnets. C affects inbound traffic to the instance, not outbound. D affects DNS, not general connectivity.",
+      "anchor": "#skill-531-troubleshoot-vpc"
+    },
+    {
+      "id": 43,
+      "domain": 5,
+      "question": "A CloudFront distribution returns HTTP 403 Forbidden for all requests. The S3 origin has public objects. What is the most likely cause?",
+      "options": [
+        "A. CloudFront TTL is misconfigured",
+        "B. OAC or OAI is configured but the S3 bucket policy is missing or incorrect",
+        "C. The origin domain name is wrong",
+        "D. The SSL certificate is invalid"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. When Origin Access Control (OAC) or Origin Access Identity (OAI) is used, the S3 bucket must have a policy allowing the CloudFront identity. If missing or incorrect, S3 returns 403. A affects caching, not access. C would cause 502. D would cause SSL errors.",
+      "anchor": "#skill-533-cloudfront-caching"
+    },
+    {
+      "id": 44,
+      "domain": 5,
+      "question": "You need to provide private connectivity from on-premises to AWS services (S3, DynamoDB) without traversing the public internet. Which service?",
+      "options": [
+        "A. AWS PrivateLink (Interface endpoints)",
+        "B. Gateway VPC endpoints",
+        "C. Site-to-Site VPN",
+        "D. Direct Connect"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Gateway VPC endpoints (S3, DynamoDB) route traffic through AWS's private network without going over the internet. A provides private connectivity to other AWS services (not S3/DynamoDB natively). C and D establish connectivity to the VPC but still need VPC endpoints for S3/DynamoDB.",
+      "anchor": "#skill-512-private-networking"
+    },
+    {
+      "id": 45,
+      "domain": 5,
+      "question": "A Route 53 health check fails for an ALB in us-east-1. The ALB has healthy targets. What is the most likely cause?",
+      "options": [
+        "A. Route 53 health check is configured for the wrong protocol",
+        "B. The health check is configured to check a path that doesn't return 200",
+        "C. The ALB is in a different Region than the health check",
+        "D. Security group on the ALB blocks Route 53 health checkers"
+      ],
+      "correct": 2,
+      "explanation": "C is correct. Route 53 health checkers are global. If the ALB is in us-east-1 and the health check is configured for a different Region, the DNS resolution or endpoint might not match. A is possible but less likely than C. B would affect ALB health checks too. D \u2014 Route 53 health checkers come from specific IP ranges.",
+      "anchor": "#skill-522-route53-routing-policies"
+    },
+    {
+      "id": 46,
+      "domain": 5,
+      "question": "VPC Flow Logs show REJECT for traffic between two instances in the same subnet. Security groups allow all traffic between them. What is blocking it?",
+      "options": [
+        "A. Route table",
+        "B. Network ACL",
+        "C. Internet Gateway",
+        "D. DNS settings"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. NACLs are stateless and evaluate all traffic. If the NACL inbound or outbound rules deny the traffic, it's rejected even if security groups allow it. A routes traffic between subnets, not within the same subnet. C is for internet-bound traffic. D doesn't block instance-to-instance traffic.",
+      "anchor": "#skill-531-troubleshoot-vpc"
+    },
+    {
+      "id": 47,
+      "domain": 5,
+      "question": "A Transit Gateway has two VPC attachments. VPC A can reach VPC B, but VPC B cannot reach VPC A. What should you check?",
+      "options": [
+        "A. Transit Gateway route tables",
+        "B. VPC route tables in both VPCs",
+        "C. Security groups",
+        "D. NACLs"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. Each VPC needs a route in its route table pointing to the Transit Gateway for the other VPC's CIDR. If VPC B's route table doesn't have a route to VPC A's CIDR via the TGW, traffic from B to A is dropped. A controls how the TGW routes between attachments. C and D operate within each VPC.",
+      "anchor": "#skill-531-troubleshoot-vpc"
+    },
+    {
+      "id": 48,
+      "domain": 5,
+      "question": "You need to block DNS queries to known malware domains from your VPC. Which service?",
+      "options": [
+        "A. AWS Network Firewall",
+        "B. Route 53 Resolver DNS Firewall",
+        "C. AWS WAF",
+        "D. AWS Shield"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. DNS Firewall creates blocklists/allowlists for DNS queries. It operates at the DNS level, blocking resolution of malicious domains. A operates at L7 network level. C is for HTTP/HTTPS. D is for DDoS protection.",
+      "anchor": "#skill-513-network-protection"
+    },
+    {
+      "id": 49,
+      "domain": 5,
+      "question": "A CloudFront distribution caches content for 24 hours. Users report seeing stale content after an update. What is the MOST efficient way to refresh the content?",
+      "options": [
+        "A. Create a new distribution",
+        "B. Use invalidation for the specific paths",
+        "C. Wait for the TTL to expire",
+        "D. Change the S3 object key"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. CloudFront invalidation forces edge locations to fetch fresh content. Invalidating specific paths is efficient (first 1,000 free/month). A is disruptive. C is too slow. D breaks all existing links.",
+      "anchor": "#skill-533-cloudfront-caching"
+    },
+    {
+      "id": 50,
+      "domain": 5,
+      "question": "VPC Reachability Analyzer returns 'Not reachable' between an EC2 instance and an RDS instance in the same VPC. Both are in different subnets. What is the tool telling you?",
+      "options": [
+        "A. The application is not configured correctly",
+        "B. A network component (SG, NACL, route table, or gateway) is blocking the path",
+        "C. The instances are in different Availability Zones",
+        "D. DNS resolution is failing"
+      ],
+      "correct": 1,
+      "explanation": "B is correct. VPC Reachability Analyzer checks the network path: route tables, security groups, NACLs, and gateways. If it says not reachable, one of these components is blocking. A is application-level, not network. C doesn't matter within the same VPC. D is not what the tool checks.",
+      "anchor": "#skill-531-troubleshoot-vpc"
+    }
+  ]
+}
