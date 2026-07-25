@@ -607,4 +607,67 @@ aside nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px
 .markdown-body details summary { cursor: pointer; padding: 0.5rem 0.75rem; font-weight: 600; color: var(--teal); user-select: none; }
 .markdown-body details summary:hover { background: var(--line); }
 .markdown-body details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 0.5rem; }
+/* Spoiler / answer reveal */
+.markdown-body details { margin: 0.5rem 0; border: 1px solid var(--line); border-radius: 6px; }
+.markdown-body details summary { cursor: pointer; padding: 0.5rem 0.75rem; font-weight: 600; color: var(--teal); user-select: none; }
+.markdown-body details summary:hover { background: var(--line); }
+.markdown-body details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 0.5rem; }
 .markdown-body details > :not(summary) { padding: 0 0.75rem; }
+
+/* Practice Exam */
+.exam-picker { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; padding: 2rem 0; }
+.exam-picker-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; width: 280px; cursor: pointer; transition: border-color 0.15s; }
+.exam-picker-card:hover { border-color: var(--amber); }
+.exam-picker-card h3 { margin: 0 0 0.25rem; font-size: 1.1rem; }
+.exam-picker-card .exam-code { color: var(--amber-deep); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+.exam-picker-card .exam-meta { color: var(--ink-soft); font-size: 0.85rem; margin-top: 0.5rem; }
+.exam-picker-card .exam-count { color: var(--ink-faint); font-size: 0.8rem; margin-top: 0.25rem; }
+.exam-picker-card .start-available { margin-top: 1rem; padding: 0.5rem 1rem; background: var(--amber); color: var(--ink); border: none; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
+.exam-picker-card .start-available:hover { background: var(--amber-deep); color: var(--surface); }
+.exam-picker-card .start-unavailable { margin-top: 1rem; padding: 0.5rem 1rem; background: var(--line); color: var(--ink-faint); border: none; border-radius: 6px; font-weight: 600; cursor: not-allowed; width: 100%; }
+
+#exam-app { max-width: 78ch; margin: 0 auto; padding: 1rem 0; }
+.exam-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
+.exam-header-left h2 { margin: 0; font-size: 1rem; }
+.exam-header-left .exam-domain-tag { display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px; background: var(--teal); color: var(--surface); margin-left: 0.5rem; vertical-align: middle; font-weight: 600; }
+.exam-timer { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--amber-deep); }
+.exam-progress { font-size: 0.85rem; color: var(--ink-soft); }
+
+.exam-question-text { font-size: 1.05rem; line-height: 1.6; margin-bottom: 1.25rem; }
+.exam-options { list-style: none; padding: 0; margin: 0 0 1.5rem; }
+.exam-options li { margin-bottom: 0.5rem; }
+.exam-options label { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s; line-height: 1.5; }
+.exam-options label:hover { border-color: var(--amber); background: rgba(255,153,0,0.04); }
+.exam-options input[type=radio] { margin-top: 0.25rem; accent-color: var(--amber); }
+.exam-options li.correct label { border-color: #16a34a; background: rgba(22,163,74,0.08); }
+.exam-options li.incorrect label { border-color: #dc2626; background: rgba(220,38,38,0.08); }
+.exam-options li.dimmed label { opacity: 0.5; }
+
+.exam-explanation { margin-top: 1rem; padding: 1rem 1.25rem; border-radius: 8px; background: var(--paper); border-left: 3px solid var(--teal); font-size: 0.92rem; line-height: 1.65; }
+.exam-explanation a { color: var(--teal); text-decoration: underline; }
+.exam-explanation a:hover { color: var(--teal-deep); }
+.exam-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+.exam-nav button { padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.exam-nav button:hover { border-color: var(--amber); }
+.exam-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+.exam-nav button.primary { background: var(--amber); color: var(--ink); border-color: var(--amber); }
+.exam-nav button.primary:hover { background: var(--amber-deep); color: var(--surface); }
+.exam-nav button.primary:disabled { background: var(--line); color: var(--ink-faint); border-color: var(--line); }
+
+/* Results screen */
+.exam-results { text-align: center; padding: 2rem 0; }
+.exam-results h2 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.exam-results .score { font-size: 3rem; font-weight: 700; margin: 1rem 0; }
+.exam-results .score.pass { color: #16a34a; }
+.exam-results .score.fail { color: #dc2626; }
+.exam-results .score-detail { color: var(--ink-soft); font-size: 0.95rem; margin-bottom: 2rem; }
+.exam-results .domain-breakdown { text-align: left; max-width: 500px; margin: 0 auto 2rem; }
+.exam-results .domain-row { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.exam-results .domain-row:last-child { border-bottom: none; }
+.exam-results .domain-pct { font-family: 'JetBrains Mono', monospace; }
+.exam-results .domain-pct.good { color: #16a34a; }
+.exam-results .domain-pct.ok { color: var(--amber-deep); }
+.exam-results .domain-pct.bad { color: #dc2626; }
+.exam-results button { margin-top: 0.5rem; padding: 0.6rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); margin: 0.25rem; }
+.exam-results button:hover { border-color: var(--amber); }
+.exam-results button.primary { background: var(--amber); border-color: var(--amber); }
