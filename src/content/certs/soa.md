@@ -751,7 +751,7 @@ graph TB
 - Define infrastructure using TypeScript, Python, Java, etc.
 - Synthesizes to CloudFormation templates.
 - Higher-level constructs (L2, L3) abstract common patterns.
-- **Ponytail:** CDK = less YAML. Use for complex infrastructure.
+- CDK is preferred for complex infrastructure as it reduces manual YAML.
 
 **AWS RAM (Resource Access Manager):"**
 - Share resources across accounts: subnets, Transit Gateways, license manager configs.
@@ -823,7 +823,7 @@ graph LR
 - `terraform plan` / `apply` / `destroy`.
 - Modules for reusability.
 - Import existing resources with `terraform import`.
-- **Ponytail:** CloudFormation is AWS-native; Terraform is multi-cloud. Exam focuses on CFN/CDK.
+- The exam focuses on CloudFormation and CDK (AWS-native tools).
 
 ### Task 3.2: Automate the Management of Existing Resources
 
@@ -1063,7 +1063,7 @@ graph TB
 - Store parameters (strings, StringList, SecureString).
 - SecureString = encrypted with KMS.
 - Free tier: 10,000 parameters.
-- **Ponytail:** Secrets Manager for secrets (rotation + audit). Parameter Store for configuration (no rotation).
+- Use Secrets Manager for secrets requiring rotation and audit. Use Parameter Store for non-secret configuration values.
 
 #### Skill 4.2.5: Security Findings and Remediation
 
@@ -1180,7 +1180,7 @@ graph TB
 - Creates an ENI with a private IP in your VPC.
 - Powered by AWS PrivateLink.
 - Access services like CloudWatch, SSM, KMS, EventBridge, etc.
-- **Ponytail:** PrivateLink is blocked by company policy. Use Interface endpoints within the same VPC; on-prem → AWS via public internet.
+- Interface endpoints provide private connectivity to AWS services within the same VPC.
 
 **VPC Peering:"**
 - Direct network connection between two VPCs (same or different accounts/Regions).
@@ -1324,7 +1324,7 @@ graph TD
 - Capture: source/dest IP, ports, protocol, action (ACCEPT/REJECT), bytes, packets.
 - Destination: S3 or CloudWatch Logs.
 - Cannot filter at capture time — use CloudWatch Logs Insights or Athena for analysis.
-- **Ponytail:** Flow Logs are essential for network troubleshooting. Always enable.
+- Enable VPC Flow Logs for network troubleshooting — they capture all accepted and rejected traffic.
 
 #### Skill 5.3.3: CloudFront Caching Issues
 
