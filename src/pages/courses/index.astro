@@ -1,0 +1,26 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout title="Courses" activeSlug="courses" description="Presentation-based AWS certification courses.">
+  <section class="courses-page">
+    <p class="course-kicker">Presentation courses</p>
+    <h1>Courses</h1>
+    <p class="courses-lead">Select a certification, then choose a domain presentation.</p>
+    <div class="course-catalog">
+      <a class="course-catalog-card available" href={`${base}/courses/dea-c01/`}>
+        <span class="course-card-code">DEA-C01</span>
+        <h2>AWS Certified Data Engineer – Associate</h2>
+        <p>Domain-by-domain presentations with diagrams, speaker notes, exam cues, and review questions.</p>
+        <span class="course-card-action">View course →</span>
+      </a>
+      <div class="course-catalog-card unavailable" aria-label="More certification courses coming soon">
+        <span class="course-card-code">More courses</span>
+        <h2>Other certifications</h2>
+        <p>Presentation tracks will appear here as domains are converted into complete course material.</p>
+        <span class="course-card-action">Coming soon</span>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

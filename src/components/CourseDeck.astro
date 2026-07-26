@@ -1,0 +1,14 @@
+---
+interface Props { title: string; weight: string; slides: { eyebrow: string; title: string; body: string; context: string }[]; back: string; }
+const { title, weight, slides, back } = Astro.props;
+---
+<section class="course-shell" aria-label={`${title} presentation`}>
+  <div class="course-topbar"><div><a class="course-back" href={back}>← DEA-C01 presentations</a><p class="course-kicker">DEA-C01 · {weight} of the exam</p><h1>{title}</h1></div><div class="course-actions"><span id="course-counter" aria-live="polite">Slide 1 of {slides.length}</span><button id="course-fullscreen" type="button">Fullscreen</button><button id="course-prev" type="button" aria-label="Previous slide">←</button><button id="course-next" type="button">Next →</button></div></div>
+  <div class="course-progress" aria-hidden="true"><div id="course-progress-fill"></div></div>
+  <div class="course-deck">{slides.map((slide, i) => <article class:list={['course-slide', { 'is-active': i === 0 }]}><span class="slide-number">{String(i + 1).padStart(2, '0')}</span><p class="course-eyebrow">{slide.eyebrow}</p><h2>{slide.title}</h2><div set:html={slide.body} /><details open><summary>Additional context</summary><p>{slide.context}</p></details></article>)}</div>
+</section>
+<script>
+const slides=Array.from(document.querySelectorAll('.course-slide')); const counter=document.querySelector('#course-counter'); const progress=document.querySelector('#course-progress-fill'); const prev=document.querySelector('#course-prev'); const next=document.querySelector('#course-next'); const shell=document.querySelector('.course-shell'); const full=document.querySelector('#course-fullscreen'); let current=0;
+function show(i){current=Math.max(0,Math.min(i,slides.length-1));slides.forEach((s,n)=>s.classList.toggle('is-active',n===current));counter.textContent=`Slide ${current+1} of ${slides.length}`;progress.style.width=`${(current+1)/slides.length*100}%`;prev.disabled=current===0;next.disabled=current===slides.length-1;next.textContent=current===slides.length-1?'End of course':'Next →';}
+prev.addEventListener('click',()=>show(current-1));next.addEventListener('click',()=>show(current+1));full.addEventListener('click',()=>document.fullscreenElement?document.exitFullscreen():shell.requestFullscreen());document.addEventListener('fullscreenchange',()=>full.textContent=document.fullscreenElement?'Exit fullscreen':'Fullscreen');document.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')show(current-1);if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();show(current+1)}});show(0);
+</script>
