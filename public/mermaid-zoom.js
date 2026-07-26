@@ -13,10 +13,22 @@
   }
 
   function attachPanZoom(svgEl) {
-    return svgPanZoom(svgEl, {
+    const panZoom = svgPanZoom(svgEl, {
       zoomEnabled: true, panEnabled: true, controlIconsEnabled: false,
       fit: false, center: false, minZoom: 0.2, maxZoom: 5, zoomScaleSensitivity: 0.35,
     });
+    panZoom.fit();
+    panZoom.center();
+    return panZoom;
+  }
+
+  function sizeCanvas(svgEl) {
+    const box = svgEl.getBBox();
+    const canvas = svgEl.closest('.mermaid-canvas');
+    if (!box.width || !box.height || !canvas) return;
+    const height = Math.max(180, Math.min(520, canvas.clientWidth * box.height / box.width));
+    canvas.style.height = `${height}px`;
+    svgEl.style.height = `${height}px`;
   }
 
   function wireToolbar(root, pz, onFullscreen) {
@@ -54,6 +66,7 @@
     const clone = svgEl.cloneNode(true);
     clone.removeAttribute('style');
     canvas.appendChild(clone);
+    sizeCanvas(clone);
     const pz = attachPanZoom(clone);
     const close = () => { pz.destroy(); document.body.style.overflow = ''; backdrop.remove(); document.removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
@@ -81,6 +94,7 @@
       const svgEl = wrap.querySelector('.mermaid-canvas svg');
       if (!svgEl) return;
       svgEl.style.width = '100%';
+      sizeCanvas(svgEl);
       const pz = attachPanZoom(svgEl);
       wireToolbar(wrap, pz, () => openFullscreen(svgEl, wrap.dataset.mermaidId || `Diagram ${i + 1}`));
     });
