@@ -12,9 +12,10 @@ The DEA-C01 track also includes exam-focused, browser-native slide courses.
 | Code | Status |
 |------|--------|
 | DEA-C01 (Data Engineer) | ✅ Complete |
+| SOA-C03 (CloudOps Engineer) | ✅ Complete |
+| MLA-C01 (Machine Learning Engineer) | ✅ Complete |
 | SAA-C03 (Solutions Architect) | 🚧 Coming soon |
 | DVA-C02 (Developer) | 🚧 Coming soon |
-| SOA-C02 (SysOps) | 🚧 Coming soon |
 
 ## DEA-C01 Course
 
