@@ -2,8 +2,8 @@
 
 Static study guides for AWS certifications, built with [Astro](https://astro.build/).
 
-Content is sourced from official AWS exam guides and rendered at build time —
-no client-side markdown parsing, no framework JS on the page beyond mermaid diagrams.
+Content is sourced from official AWS exam guides and rendered at build time.
+The DEA-C01 track also includes exam-focused, browser-native slide courses.
 
 **Live:** https://rodrigosiviero.github.io/aws-study-hub/
 
@@ -15,6 +15,22 @@ no client-side markdown parsing, no framework JS on the page beyond mermaid diag
 | SAA-C03 (Solutions Architect) | 🚧 Coming soon |
 | DVA-C02 (Developer) | 🚧 Coming soon |
 | SOA-C02 (SysOps) | 🚧 Coming soon |
+
+## DEA-C01 Course
+
+The Data Engineer – Associate track is available at
+[`/courses/dea-c01/`](https://rodrigosiviero.github.io/aws-study-hub/courses/dea-c01/).
+It contains four exam-focused domains:
+
+| Domain | Weight | Focus |
+|--------|-------:|-------|
+| Data Ingestion and Transformation | 34% | Batch, streaming, ETL, Spark, and orchestration |
+| Data Store Management | 26% | Storage selection, catalogs, lifecycle, models, and migration |
+| Data Operations and Support | 22% | Automation, analytics, observability, recovery, and data quality |
+| Data Security and Governance | 18% | Identity, authorization, encryption, audit, privacy, and governance |
+
+Each course has keyboard navigation, a right-side additional-context panel,
+exam traps, active-recall prompts, and native browser fullscreen support.
 
 ## Getting Started
 
@@ -30,7 +46,7 @@ npm run preview  # serve ./dist locally
 ```
 src/
   content/certs/          # One .md per certification (frontmatter + markdown)
-  components/             # Sidebar, CertGrid, PipelineHero
+  components/             # Shared UI, including the reusable CourseDeck
   layouts/BaseLayout.astro
   lib/
     toc.ts                # Builds sidebar TOC + weight bar from headings
@@ -38,6 +54,7 @@ src/
   pages/
     index.astro           # Home / cert picker
     [slug]/index.astro    # Dynamic route: /dea/, /saa/, etc.
+    courses/dea-c01/      # DEA-C01 catalog and four domain courses
   styles/global.css
   scripts/
     page.js               # Progress bar + scroll spy
@@ -84,7 +101,8 @@ order: 2
 - Source everything from official AWS exam guides or AWS documentation.
 - Keep answers objective — no fluff.
 - Use comparison tables over prose when contrasting services.
-- Include ` ```mermaid ``` ` diagrams for architectures and flows.
+- Prefer concise diagrams, comparison tables, and service-selection scenarios.
+- Course content must be in English and include exam traps or active recall.
 
 ## Deployment
 
