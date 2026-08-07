@@ -309,6 +309,34 @@ graph LR
 | Foundation model through Bedrock | Managed foundation-model access | Generative AI without hosting model infrastructure |
 | Fine-tuned foundation model | Additional customization cost and data requirements | Domain adaptation where prompt-only behavior is insufficient |
 
+#### SageMaker built-in algorithms — exam cheat sheet
+
+**Input modes:** SageMaker training commonly uses **File mode** (downloads S3 data to the training volume before the job), **FastFile mode** (streams S3 data on demand while presenting a file interface), or **Pipe mode** (streams data directly from S3 through a pipe). File mode is the simple default; FastFile avoids a full download while retaining file semantics; Pipe mode is useful for large sequential datasets when the algorithm supports it.
+
+| Algorithm | Memorize this use case | Exam signal / distinction |
+|---|---|---|
+| **Linear Learner** | Binary/multiclass classification or regression on tabular features | Learns a linear function or threshold; choose a fast baseline for numeric/tabular data. |
+| **XGBoost** | High-quality tabular classification or regression | Gradient-boosted decision trees; SageMaker supports it as a built-in algorithm **or** a framework with custom scripts. |
+| **LightGBM** | Scalable gradient-boosted trees for tabular prediction | Tree boosting optimized with GOSS and EFB; use when the scenario emphasizes efficient large-scale boosting. |
+| **Factorization Machines** | Recommendations, click-through prediction, sparse high-dimensional features | Learns feature interactions efficiently; classic user-item or ad-ranking signal. |
+| **K-Nearest Neighbors (k-NN)** | Classification or regression by similarity | Predicts from nearby examples; distance-based and sensitive to feature scaling. |
+| **K-Means** | Unsupervised clustering | Groups unlabeled records into *k* clusters; choose for segmentation, not classification. |
+| **PCA** | Dimensionality reduction | Produces lower-dimensional components while preserving variance; preprocessing, visualization, or noise reduction. |
+| **Random Cut Forest (RCF)** | Unsupervised anomaly detection | Finds unusual observations without labels; fraud, sensor, log, or time-series outliers. |
+| **DeepAR** | Probabilistic time-series forecasting | RNN-based forecasting across many related series; use for demand, inventory, traffic, or revenue forecasts. |
+| **Seq2Seq** | Sequence-to-sequence transformation | Supervised neural translation pattern: input sequence → output sequence, such as machine translation. |
+| **BlazingText** | Word embeddings or text classification | Optimized Word2Vec and supervised text classification for large NLP datasets. |
+| **Object2Vec** | Embeddings and similarity learning | Learns vector representations of object pairs; similarity, retrieval, recommendations, or relationship prediction. |
+| **Neural Topic Model (NTM)** | Unsupervised topic discovery in documents | Neural topic modeling; extracts latent themes from an unlabeled text corpus. |
+| **Latent Dirichlet Allocation (LDA)** | Probabilistic topic modeling | Another unsupervised document-topic approach; do not confuse it with a supervised text classifier. |
+| **Object Detection** | Locate and classify multiple objects in images | Returns labels **and bounding boxes**; use when location matters. |
+| **Image Classification** | Assign one or more labels to an image | Returns image-level labels; no object location requirement. |
+| **Semantic Segmentation** | Label every pixel in an image | Pixel-level masks for road scenes, medical imagery, or precise boundaries. |
+
+> **Fast elimination:** labels + numeric prediction → Linear Learner/XGBoost/LightGBM; no labels + groups → K-Means; no labels + unusual records → RCF; forecast over time → DeepAR; document themes → NTM/LDA; image labels/bounding boxes/pixels → classification/detection/segmentation.
+
+**Input-format cues:** many classic built-ins support RecordIO-Protobuf; DeepAR and BlazingText use JSON Lines; image algorithms accept image formats such as JPEG or `application/x-image`. On the exam, match the algorithm's documented input requirement before choosing an otherwise plausible answer.
+
 ### Task 2.2: Train and Refine Models
 
 #### Training fundamentals
