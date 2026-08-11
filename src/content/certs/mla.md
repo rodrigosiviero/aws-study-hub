@@ -853,7 +853,112 @@ graph TB
 
 ---
 
-## Appendix C: ELI5 Vocabulary and 10-Minute Review
+## Appendix C: Model, Metrics, and Performance — Exam Memory Deck
+
+This appendix is for the questions that deliberately make several answers look reasonable. Read the **business outcome** first, then match the model, metric, or remedy. A better algorithm is not automatically the correct answer; the correct answer is the smallest option that solves the stated problem and constraint.
+
+### 1. Pick the model from the shape of the answer
+
+| If the question asks for… | First choice to remember | Keywords that should trigger it | Do not confuse it with |
+|---|---|---|---|
+| A number: price, demand, duration, revenue | **Linear Learner**, **XGBoost**, or **LightGBM** regression | predict amount, continuous value, estimate | Classification, which returns a class/label. |
+| A yes/no or named category | **Linear Learner**, **XGBoost**, or **LightGBM** classification | fraud/not fraud, churn, approve, class | K-Means: it has no labels. |
+| Strong tabular performance with nonlinear relationships | **XGBoost** | tabular, trees, boosted trees, high accuracy | Linear Learner: simpler linear baseline. |
+| Fast/simple tabular baseline or linear boundary | **Linear Learner** | linear, baseline, numeric features, binary/multiclass | XGBoost: tree-based interactions. |
+| Sparse user-item/ad-click interactions | **Factorization Machines** | recommendation, click-through rate, sparse features | Object2Vec: learns similarity embeddings. |
+| Similar examples decide the answer | **k-NN** | nearest, similar records, distance | K-Means: makes groups, not a label from neighbors. |
+| Unlabeled customer/product segments | **K-Means** | cluster, segment, groups, no labels | Classification: needs known labels. |
+| Fewer useful dimensions | **PCA** | reduce columns, preserve variance, visualization | Feature selection: removes columns rather than creating components. |
+| Strange unlabeled records | **Random Cut Forest** | anomaly, outlier, unusual sensor/log/fraud event | DeepAR: forecasts a future value. |
+| Many related future sequences | **DeepAR** | forecast demand, inventory, traffic, time series | RCF: detects unusual points, not the future. |
+| Text categories or word vectors | **BlazingText** | Word2Vec, embeddings, text classification | NTM/LDA: discover topics without labels. |
+| Hidden subjects in an unlabeled document set | **NTM** or **LDA** | topics, themes, corpus, no labels | BlazingText: supervised text classification. |
+| Image-level answer | **Image Classification** | what is in this image, label the image | Detection/segmentation: location matters. |
+| Image locations | **Object Detection** | bounding box, locate each object | Classification: no coordinates. |
+| Exact image regions | **Semantic Segmentation** | each pixel, mask, boundary | Detection: boxes are less precise. |
+
+**Memory chain:** **number → regression; name → classification; no labels + groups → K-Means; no labels + weird → RCF; later in time → DeepAR; box → detection; pixel → segmentation.**
+
+### 2. Read precision and recall without memorizing formulas
+
+Imagine a smoke alarm. A **false positive** is an alarm when there is no fire. A **false negative** is no alarm during a real fire.
+
+| Signal | Plain meaning | What a low result says | Improve it when… | Exam words |
+|---|---|---|---|---|
+| **Precision** | “When the model says YES, can I trust it?” | Too many false positives | Investigations, manual review, customer disruption are expensive | false alarm, wrongful flag, avoid unnecessary review |
+| **Recall** | “Of all real YES cases, how many did we catch?” | Too many false negatives | Missing a real case is expensive or dangerous | detect all, catch fraud, missed disease, do not miss |
+| **F1** | One score balancing precision and recall | One or both are weak | Both error types matter, especially with imbalance | balance precision and recall, imbalanced classes |
+| **Accuracy** | “How often was any answer right?” | Can hide minority-class failure | Classes are balanced and errors cost about the same | balanced classes, overall correct |
+| **ROC-AUC** | “How well are positives ranked above negatives across thresholds?” | Poor separation/ranking | Compare binary classifiers across possible thresholds | discrimination, ranking, threshold-independent |
+| **PR-AUC** | “How useful are positive predictions in a rare-positive problem?” | Positive class quality is weak | Positives are rare and precision/recall matter | rare positives, severe imbalance |
+
+**High precision + low recall** means: “The model only says YES when very sure, so its YES answers are usually right, but it misses many real YES cases.” Typical remedy: lower the decision threshold **after validating the business trade-off**, or improve data/features/model. This usually raises recall and may lower precision.
+
+**High recall + low precision** means: “The model catches almost every real YES case, but also raises many false alarms.” Typical remedy: raise the threshold, improve features/model, or add a human review stage. This usually raises precision and may lower recall.
+
+> **Exam tip:** The threshold is a business dial, not a magic accuracy dial. If the question says “missing fraud is unacceptable,” favor recall. If it says “each investigation costs money,” favor precision. If it explicitly needs both, favor F1 and inspect the confusion matrix.
+
+### 3. Diagnose training versus validation before changing knobs
+
+| What you see | What it means | First remedies to remember | Avoid this wrong reaction |
+|---|---|---|---|
+| Training poor, validation poor | **Underfitting**: student has not learned enough | Better features, more capacity, train longer, lower excessive regularization | Adding more regularization. |
+| Training strong, validation weak | **Overfitting**: student memorized practice cards | More representative data, augmentation, L1/L2, dropout, early stopping, simpler model | Training longer without a validation guard. |
+| Training and validation both improve, then validation stops/improves no more | Convergence plateau | Early stopping; tune learning rate/model capacity; inspect data | Keep spending on epochs with no validation gain. |
+| Metrics fluctuate wildly | Unstable training | Check learning rate, batch size, data quality, scaling/normalization | Assume a higher epoch count fixes it. |
+
+### 4. Performance-improvement toolkit: what each lever actually does
+
+| Lever | ELI5 explanation | Best exam clue | Main trade-off / trap |
+|---|---|---|---|
+| **L1 regularization** | Charges the model for keeping too many clues; many weights become zero | sparse model, feature selection | Can remove useful weak signals if too strong. |
+| **L2 / weight decay** | Charges the model for relying too heavily on any one clue | large weights, smoother generalization | Shrinks weights but usually does not make them exactly zero. |
+| **Dropout** | Hides random study partners during practice so no one student is relied on | neural network overfitting | Training-only technique; do not treat it as data cleaning. |
+| **Early stopping** | Stop practice when the practice score keeps improving but the quiz score does not | validation metric no longer improves | Needs a validation signal; not a substitute for evaluation. |
+| **Data augmentation** | Create realistic extra practice variations | images/text/audio, limited labeled data | Must preserve the true label; unrealistic changes add noise. |
+| **Feature selection** | Remove noisy or redundant clues | too many columns, simpler/faster model | Do not remove features using information from the test set. |
+| **Hyperparameter tuning / AMT** | Try controlled combinations of training knobs | choose learning rate/tree count/layers automatically | Optimize the correct objective metric; AMT cannot fix bad labels. |
+| **Distributed training** | Several students share the practice load | huge data/model, training takes too long | Adds coordination cost; do not use for a small job without need. |
+| **Managed Spot training** | Cheaper training seats that can be reclaimed | interruption tolerated, reduce cost | Not for work that cannot resume/checkpoint. |
+| **Ensemble / boosting** | Combine several learners | incremental quality justifies cost/latency | More complexity is not free; use only when required. |
+| **Pruning/compression/lower precision** | Make the learner smaller | deployment memory/latency/storage constraint | Check quality impact; it is an optimization, not a first modeling choice. |
+
+### 5. AUC, F1, L1, and L2: one-line memory hooks
+
+- **AUC:** “Across many thresholds, does the model rank a real positive above a negative?” Use it to compare binary ranking/discrimination, not to choose an operating threshold by itself.
+- **F1:** “One score when both false alarms and misses hurt.” It is especially useful when classes are imbalanced.
+- **L1:** “**1** clue at a time can survive; the rest can become zero.” Think sparse weights and feature selection.
+- **L2:** “Keep **2** feet on the ground: no giant weight.” Think smaller, smoother weights and generalization.
+
+### 6. Fast exam decision routine
+
+1. Is the target a **number**, **class**, **group**, **anomaly**, **future value**, **text**, or **image**?
+2. Are labels available? If not, remove supervised answers unless the question provides another learning signal.
+3. Which error is worse: false positive or false negative? Pick precision, recall, F1, or a threshold accordingly.
+4. Compare training and validation: both weak → underfit; train strong/validation weak → overfit.
+5. Choose the narrowest fix named by the symptom before choosing expensive custom infrastructure or a new algorithm.
+
+### Active recall: diagnose before revealing the answer
+
+**Q1.** A fraud model flags only 5 transactions. All 5 are fraud, but it misses 95 fraudulent transactions. What is its metric pattern and first business decision?
+
+<details><summary>Answer</summary>High precision and very low recall. The model's positive flags are trustworthy, but it misses most real fraud. If missing fraud is costly, evaluate a lower threshold and validate the resulting increase in false positives.</details>
+
+**Q2.** A model gets 99% accuracy because 99% of payments are legitimate, but it almost never finds fraud. Which metric family should drive evaluation?
+
+<details><summary>Answer</summary>Precision and recall, often F1 or PR-AUC, plus the confusion matrix. Accuracy is misleading for this imbalanced problem.</details>
+
+**Q3.** Training loss falls every epoch while validation loss starts increasing. Which set of remedies fits first?
+
+<details><summary>Answer</summary>Overfitting: early stopping, L1/L2, dropout, more representative data/augmentation, feature selection, or a simpler model. More epochs alone makes the symptom worse.</details>
+
+**Q4.** The team needs customer segments but has no existing segment labels. Which built-in algorithm is the direct fit?
+
+<details><summary>Answer</summary>K-Means. The requirement is unlabeled grouping/clustering, not supervised classification.</details>
+
+---
+
+## Appendix D: ELI5 Vocabulary and 10-Minute Review
 
 | Word | Explain it like you are five | Exam meaning |
 |---|---|---|
@@ -880,7 +985,7 @@ graph TB
 
 ---
 
-## Appendix D: AWS Resources
+## Appendix E: AWS Resources
 
 - AWS Machine Learning Blog: https://aws.amazon.com/blogs/machine-learning/
 - SageMaker AI Developer Guide: https://docs.aws.amazon.com/sagemaker/
