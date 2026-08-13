@@ -66,8 +66,8 @@
     const clone = svgEl.cloneNode(true);
     clone.removeAttribute('style');
     canvas.appendChild(clone);
-    sizeCanvas(clone);
     const pz = attachPanZoom(clone);
+    requestAnimationFrame(() => { pz.resize(); pz.fit(); pz.center(); });
     const close = () => { pz.destroy(); document.body.style.overflow = ''; backdrop.remove(); document.removeEventListener('keydown', onKey); };
     const onKey = (e) => { if (e.key === 'Escape') close(); };
     document.addEventListener('keydown', onKey);
