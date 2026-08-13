@@ -879,6 +879,31 @@ This appendix is for the questions that deliberately make several answers look r
 
 **Memory chain:** **number → regression; name → classification; no labels + groups → K-Means; no labels + weird → RCF; later in time → DeepAR; box → detection; pixel → segmentation.**
 
+#### Visual keyword map — model selection
+
+```mermaid
+flowchart TD
+    Q[Read the desired output and keywords] --> L{Labels exist?}
+    L -->|No| U{Question keyword}
+    U -->|groups segments clusters| KM[K-Means]
+    U -->|outlier anomaly unusual| RCF[Random Cut Forest]
+    U -->|topics themes documents| TOPIC[NTM or LDA]
+    L -->|Yes| O{What must be predicted?}
+    O -->|number price demand duration| REG{Tabular pattern?}
+    REG -->|simple linear baseline| LL[Linear Learner]
+    REG -->|nonlinear tabular CSV Parquet| XGB[XGBoost or LightGBM]
+    O -->|class fraud churn approve| CLS{Question keyword}
+    CLS -->|simple linear baseline| LL2[Linear Learner]
+    CLS -->|high quality nonlinear tabular| XGB2[XGBoost or LightGBM]
+    CLS -->|sparse users items clicks| FM[Factorization Machines]
+    O -->|future values over time| DEEPAR[DeepAR]
+    O -->|image label| IC[Image Classification]
+    O -->|bounding boxes| OD[Object Detection]
+    O -->|pixel mask| SS[Semantic Segmentation]
+```
+
+> **Keyword caution:** `CSV` alone does **not** force XGBoost. CSV describes a format. The stronger clue is **supervised tabular classification/regression with nonlinear relationships**. Pick Linear Learner when the question calls for a linear/simple baseline; pick XGBoost/LightGBM when it calls for boosted trees or stronger nonlinear tabular behavior.
+
 ### 2. Read precision and recall without memorizing formulas
 
 Imagine a smoke alarm. A **false positive** is an alarm when there is no fire. A **false negative** is no alarm during a real fire.
@@ -897,6 +922,22 @@ Imagine a smoke alarm. A **false positive** is an alarm when there is no fire. A
 **High recall + low precision** means: “The model catches almost every real YES case, but also raises many false alarms.” Typical remedy: raise the threshold, improve features/model, or add a human review stage. This usually raises precision and may lower recall.
 
 > **Exam tip:** The threshold is a business dial, not a magic accuracy dial. If the question says “missing fraud is unacceptable,” favor recall. If it says “each investigation costs money,” favor precision. If it explicitly needs both, favor F1 and inspect the confusion matrix.
+
+#### Visual keyword map — metric and threshold selection
+
+```mermaid
+flowchart TD
+    Q[Read what the business cannot afford] --> E{Which error hurts more?}
+    E -->|False negatives: missed fraud disease defect| REC[Prioritize Recall]
+    E -->|False positives: costly review wrongful block| PRE[Prioritize Precision]
+    E -->|Both false positives and false negatives| F1[Use F1 and confusion matrix]
+    E -->|Balanced classes similar error cost| ACC[Accuracy can be useful]
+    Q --> R{Compare binary models across thresholds?}
+    R -->|ranking discrimination| AUC[ROC-AUC]
+    R -->|rare positive class| PRAUC[PR-AUC plus precision and recall]
+    REC --> TLOW[Often lower threshold then validate trade-off]
+    PRE --> THIGH[Often raise threshold then validate trade-off]
+```
 
 ### 3. Diagnose training versus validation before changing knobs
 
@@ -929,6 +970,27 @@ Imagine a smoke alarm. A **false positive** is an alarm when there is no fire. A
 - **F1:** “One score when both false alarms and misses hurt.” It is especially useful when classes are imbalanced.
 - **L1:** “**1** clue at a time can survive; the rest can become zero.” Think sparse weights and feature selection.
 - **L2:** “Keep **2** feet on the ground: no giant weight.” Think smaller, smoother weights and generalization.
+
+#### Visual keyword map — choose the smallest performance fix
+
+```mermaid
+flowchart TD
+    Q[Read training and validation behavior] --> D{What is the symptom?}
+    D -->|Train poor and validation poor| UF[Underfitting]
+    UF --> UFIX[Better features, more capacity, train longer, or reduce excessive regularization]
+    D -->|Train strong but validation weak| OF[Overfitting]
+    OF --> REG{Keyword in answer?}
+    REG -->|sparse weights feature selection| L1[L1 regularization]
+    REG -->|shrink large weights generalization| L2[L2 weight decay]
+    REG -->|neural network co-adaptation| DROP[Dropout]
+    REG -->|validation stops improving| EARLY[Early stopping]
+    REG -->|realistic extra examples| AUG[Data augmentation]
+    D -->|Huge job training too slowly| SPEED{Constraint?}
+    SPEED -->|more compute parallel work| DIST[Distributed training]
+    SPEED -->|cost and interruptions allowed| SPOT[Managed Spot training]
+    D -->|model too large or slow to serve| SMALL[Pruning, compression, lower precision, or feature selection]
+    D -->|find best training knobs| AMT[SageMaker Automatic Model Tuning]
+```
 
 ### 6. Fast exam decision routine
 
