@@ -40,7 +40,7 @@ export function buildToc(headings: MarkdownHeading[]): TocSection[] {
         subsections: [],
       };
       toc.push(current);
-    } else if (h.depth === 3 && current) {
+    } else if (h.depth === 3 && current && /^Task\s+\d/.test(h.text)) {
       const title = h.text
         .replace(/^\d+\.\d+\s*/, '')
         .replace(/:.+$/, '')
