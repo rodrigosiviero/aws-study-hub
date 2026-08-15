@@ -57,6 +57,56 @@ O --> W
 
 ### Task 1.1: Design secure access to AWS resources
 
+#### Architecture studio
+
+**ELI5 expansion:** Give people and workloads a badge that expires, and put each team in the room it needs—not a master key that opens every room.
+
+**Reference architecture:** Corporate identity provider → IAM Identity Center → permission set → target-account role → resource policy and KMS key policy.
+
+```mermaid
+flowchart LR
+    H[Human + corporate IdP] --> IC[IAM Identity Center]
+    IC --> DEV[Development account]
+    IC --> PROD[Production permission set]
+    PROD --> R[STS assume-role]
+    R --> S3[(Report bucket policy)]
+    ORG[Organizations + SCP] -. maximum boundary .-> PROD
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use IAM Identity Center for workforce access across accounts; use an IAM role for AWS services and cross-account callers; use Cognito for application customers. | Fits the stated outcome with managed operations. | An IAM user is a narrow fallback for a human when federation is impossible. It is not the normal identity for an application. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Configure the role trust policy (who may assume it), permission policy (what it may do), session duration, MFA condition, permission boundary, and resource ARN/prefix conditions.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- A broad trust policy lets an unintended principal assume the role. A broad resource policy can expose a bucket across accounts. CloudTrail and IAM Access Analyzer reveal these paths.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **centralized workforce SSO, temporary credentials, cross-account administration, guardrails**.
+>
+> **Common trap:** An SCP is a guardrail, not a grant. Both the SCP and the identity/resource policy path must allow the request.
+>
+> **Official coverage retained:** IAM users/groups/roles, STS, cross-account role access, IAM Identity Center/federation, Organizations/SCPs, resource policies, root protection.
+
+
 **ELI5:** Identity answers “who is asking?” and authorization answers “what may they do?” AWS should give each human or workload only the small set of permissions it needs.
 
 **Why it matters:** A leaked credential or overly broad policy can affect every resource it can reach. Good identity boundaries limit the blast radius.
@@ -97,6 +147,56 @@ O --> W
 > **Exam Keywords:** least privilege, MFA, STS, assume role, trust policy, federation, IAM Identity Center, SCP, resource policy, shared responsibility.
 
 ### Task 1.2: Design secure workloads and applications
+
+#### Architecture studio
+
+**ELI5 expansion:** Put the public door in front, keep the valuable rooms private, and let each room accept traffic only from the room immediately before it.
+
+**Reference architecture:** Viewer → CloudFront/WAF → public ALB → private application security group → database security group; secrets arrive through a private endpoint.
+
+```mermaid
+flowchart TB
+    I[Internet] --> CF[CloudFront + WAF + Shield]
+    CF --> ALB[Internet-facing ALB: public subnets]
+    ALB --> APP[App tasks: private subnets]
+    APP --> VPCE[Interface VPC endpoint]
+    VPCE --> SEC[Secrets Manager]
+    APP --> DB[(RDS: isolated DB subnets)]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use WAF for Layer 7 request filtering, Shield for DDoS coverage, Cognito for customer sign-in, and Secrets Manager for rotating credentials. | Fits the stated outcome with managed operations. | Use a NAT gateway for general outbound internet access; use interface or gateway endpoints when the target AWS service supports private access. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set SG source to the preceding SG instead of a CIDR; configure WAF managed rules/rate rules; set Secrets Manager rotation; set route tables and endpoint policies.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- A public IP or 0.0.0.0/0 database rule bypasses tiering. A missing endpoint route can force private traffic through NAT. A secret in user data can leak into logs.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **web exploits, SQL injection, private service-to-service traffic, rotating password, customer registration**.
+>
+> **Common trap:** A NAT gateway permits initiated egress only. It does not accept unsolicited internet traffic for a private instance.
+>
+> **Official coverage retained:** secure VPCs, segmentation, security groups/NACLs, WAF/Shield, Cognito, GuardDuty/Macie, Secrets Manager, endpoints, VPN/Direct Connect.
+
 
 **ELI5:** A secure application has locked doors at every layer: network paths, user login, application secrets, and protection against hostile requests.
 
@@ -148,6 +248,56 @@ APP --> DB[Private database subnet]
 
 ### Task 1.3: Determine appropriate data security controls
 
+#### Architecture studio
+
+**ELI5 expansion:** Lock stored data, protect it while it travels, keep a recoverable copy, and make data disappear on schedule when policy says it should.
+
+**Reference architecture:** TLS terminates at an ACM-integrated endpoint; KMS authorizes encryption/decryption; AWS Backup retains recovery points; lifecycle controls archival and deletion.
+
+```mermaid
+flowchart LR
+    C[Client] -->|TLS certificate from ACM| API[API / ALB]
+    API -->|KMS encrypt| S3[(S3 versioned objects)]
+    API -->|KMS encrypt| RDS[(Encrypted RDS)]
+    S3 --> L[S3 lifecycle / Object Lock]
+    RDS --> B[AWS Backup vault + cross-Region copy]
+    M[Macie finding] --> S3
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use KMS for integrated key management, ACM for supported TLS endpoints, AWS Backup for centrally governed backups, and Macie to discover sensitive S3 data. | Fits the stated outcome with managed operations. | CloudHSM fits dedicated HSM/control requirements. Parameter Store suits simple encrypted configuration but does not provide Secrets Manager-style rotation. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Choose AWS-managed versus customer-managed KMS key; define key policy/grants, S3 versioning/Object Lock, backup vault/retention/copy, TLS listener policy, and lifecycle transition days.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- A KMS key policy can block a restore even when the backup exists. A lifecycle expiration can violate retention. Un-tested restores leave RTO as a guess.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **encrypt at rest and in transit, retention, immutable records, key access, backup copy, classify PII**.
+>
+> **Common trap:** Encryption is not authorization: the caller needs access to the data and, for customer-managed encryption, permission to use the key.
+>
+> **Official coverage retained:** KMS/key policies/grants, ACM/TLS, backups/replication, recovery, classification, lifecycle/retention, key rotation and certificate renewal.
+
+
 **ELI5:** Data needs labels, locked storage, protected travel, a recovery copy, and a plan for when to delete it.
 
 **Why it matters:** A workload can have perfect servers yet still fail compliance or lose customer information if the data is exposed, unrecoverable, or kept forever.
@@ -192,6 +342,58 @@ APP --> DB[Private database subnet]
 ## Domain 2: Design Resilient Architectures (26%)
 
 ### Task 2.1: Design scalable and loosely coupled architectures
+
+#### Architecture studio
+
+**ELI5 expansion:** Let the cashier accept an order quickly, place it on a ticket rail, and allow cooks to work at their own safe speed.
+
+**Reference architecture:** Synchronous API acknowledgement → durable queue → independently scaled workers → events fan out to independent consumers.
+
+```mermaid
+flowchart LR
+    U[Clients] --> API[API Gateway]
+    API --> Q[SQS queue + DLQ]
+    Q --> W[Auto Scaling ECS/Fargate workers]
+    W --> DB[(Durable database)]
+    W --> EB[EventBridge]
+    EB --> INV[Inventory]
+    EB --> ANA[Analytics]
+    SF[Step Functions] -. coordinates dependent steps .-> W
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use SQS for buffered work consumed once, SNS for straightforward fan-out, EventBridge for content-based event routing, and Step Functions for stateful multi-step orchestration. | Fits the stated outcome with managed operations. | A direct API call is appropriate only when the caller truly needs an immediate response. Use API Gateway for managed APIs and an ALB for HTTP services behind compute. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set SQS visibility timeout longer than processing time, DLQ max receives, retention, long polling, FIFO message group/deduplication IDs, worker concurrency, and idempotency key.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- A too-short visibility timeout duplicates work. No DLQ hides poison messages. Non-idempotent consumers can double-charge when delivery is retried.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **burst absorption, asynchronous processing, retry later, fan-out, independent release cadence**.
+>
+> **Common trap:** SQS delivers work; it is not a workflow engine and does not make processing exactly once by itself.
+>
+> **Official coverage retained:** APIs, caching, microservices, events, horizontal scaling, containers, queues/topics, serverless, read replicas, workflow orchestration.
+
 
 **ELI5:** Build components like separate queues at a busy kitchen. One slow station should not stop ordering, and more cooks can be added when demand rises.
 
@@ -257,6 +459,58 @@ E --> A[Analytics]
 
 ### Task 2.2: Design highly available and/or fault-tolerant architectures
 
+#### Architecture studio
+
+**ELI5 expansion:** Do not put all spare tires in the same car: distribute failure handling across instances, AZs, and—when required—Regions.
+
+**Reference architecture:** Health check → load balancer → targets in multiple AZs → managed database failover → protected recovery copy outside the Region.
+
+```mermaid
+flowchart TB
+    R53[Route 53 health checks] --> ALB[ALB across two AZs]
+    ALB --> A[App AZ-a]
+    ALB --> B[App AZ-b]
+    A --> P[RDS Proxy]
+    B --> P
+    P --> DB[(RDS Multi-AZ writer/standby)]
+    DB --> DR[Cross-Region backup or replica]
+    DR --> R[Recovery Region]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use Multi-AZ for local availability, read replicas for read scaling, Route 53 health checks for DNS failover, and the DR pattern matching RPO/RTO. | Fits the stated outcome with managed operations. | Backup/restore minimizes cost; pilot light keeps core services ready; warm standby keeps a reduced environment running; active-active minimizes downtime at the highest complexity/cost. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Place ASG capacity in two or more AZs; configure health checks/grace periods, RDS Multi-AZ, backup copy destination, Route 53 failover records, alarms, and RDS Proxy connection limits.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- One-AZ workers, one NAT path, or one writer without a tested failover is a single point of failure. Standby capacity can fail quotas during a regional event.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **survive an AZ loss, fail over automatically, business continuity, RPO, RTO, no single point of failure**.
+>
+> **Common trap:** Multi-AZ protects a database writer locally; it does not make a cross-Region recovery plan. A read replica is normally asynchronous and primarily serves reads.
+>
+> **Official coverage retained:** AZ/Region design, Route 53, DR/RPO/RTO, distributed design, failover, immutable replacement, proxies, quotas, durable replication, monitoring/X-Ray.
+
+
 **ELI5:** Availability means the service stays usable; fault tolerance means it can keep working even when parts fail. Spread important parts so one failure cannot end the service.
 
 **Why it matters:** A single AZ, instance, NAT device, database writer, or manual recovery step can become a single point of failure.
@@ -321,6 +575,56 @@ RDS --> B[Backups / cross-Region copy]
 
 ### Task 3.1: Determine high-performing and/or scalable storage solutions
 
+#### Architecture studio
+
+**ELI5 expansion:** A bucket is for named objects, a shared folder is for many machines, and a block volume is a disk for one server.
+
+**Reference architecture:** Application access pattern → correct storage abstraction → performance configuration → backup/replication and lifecycle controls.
+
+```mermaid
+flowchart TD
+    Q{How is data accessed?}
+    Q -->|Object API / web assets| S3[S3 + CloudFront]
+    Q -->|Shared Linux POSIX files| EFS[EFS]
+    Q -->|Attached boot/database volume| EBS[EBS gp3/io2]
+    Q -->|Windows/Lustre/NetApp file features| FSX[FSx]
+    ON[On premises] --> SG[Storage Gateway / DataSync] --> S3
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use S3 for massive durable objects, EFS for elastic shared Linux NFS, EBS for low-latency EC2 block volumes, and FSx for specialized file systems. | Fits the stated outcome with managed operations. | Storage Gateway exposes cloud storage to hybrid applications; DataSync moves files. Neither replaces an EFS mount for a cloud-native shared POSIX workload. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set EBS volume type/size/IOPS/throughput, EFS performance and throughput mode/access points, S3 multipart upload/prefix/lifecycle, and FSx deployment/file-system type.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Using EBS as a shared filesystem creates attachment and consistency problems. Tiny S3 objects can create request overhead. Under-provisioned IOPS becomes database latency.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **shared Linux files, object archive, boot disk, high IOPS, hybrid file cache**.
+>
+> **Common trap:** S3 is object storage, not a POSIX filesystem; EBS is block storage, not a multi-instance shared file system.
+>
+> **Official coverage retained:** hybrid storage, S3/EFS/EBS characteristics, object/file/block, storage performance knobs, scaling capacity and throughput.
+
+
 **ELI5:** Pick storage by how the application touches data: named objects, a shared folder, or a disk attached to a server.
 
 **Why it matters:** A correct but mismatched storage type creates latency, throughput, sharing, or scaling limits.
@@ -354,6 +658,56 @@ RDS --> B[Backups / cross-Region copy]
 > **Exam Keywords:** S3, EFS, EBS, object, file, block, IOPS, throughput, Storage Gateway.
 
 ### Task 3.2: Design high-performing and elastic compute solutions
+
+#### Architecture studio
+
+**ELI5 expansion:** Use the smallest engine that fits, then add engines based on the queue or request pressure that actually predicts slowdowns.
+
+**Reference architecture:** Request or event → purpose-built compute → metric-based scaling → durable state in managed services.
+
+```mermaid
+flowchart LR
+    R[Requests] --> ALB[ALB]
+    ALB --> ASG[EC2 Auto Scaling / ECS service]
+    S3[S3 upload] --> L[Lambda metadata task]
+    Q[SQS depth] --> B[AWS Batch workers]
+    M[CloudWatch metric] -. target tracking .-> ASG
+    M -. target tracking .-> B
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Choose Lambda for short event-driven code, Fargate for containers without hosts, EC2 for host-level control/special hardware, Batch for queued batch jobs, and EMR for big-data frameworks. | Fits the stated outcome with managed operations. | ECS is AWS-native container orchestration; EKS fits Kubernetes operational requirements. Vertical scaling is a short-term option with a machine ceiling. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set ASG min/max/desired and target tracking metric; configure Lambda memory, timeout, reserved/provisioned concurrency; set ECS task CPU/memory and service autoscaling; select EC2 family.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Scaling workers on CPU instead of queue age/depth can react too late. Reserved concurrency can protect a downstream database but can also throttle the function deliberately.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **spiky requests, event-driven under 15 minutes, containerized service, batch queue, GPU or memory-bound workload**.
+>
+> **Common trap:** Lambda memory also changes CPU allocation; more memory can lower duration. It is not automatically the cheapest option for continuously busy long-running work.
+>
+> **Official coverage retained:** Batch/EMR/Fargate, distributed/edge compute, queues, EC2 and AWS Auto Scaling, Lambda patterns, ECS/EKS, decoupled components, metrics, resource sizing.
+
 
 **ELI5:** Compute is the engine. Choose the engine type, make more engines appear when demand rises, and avoid making every engine wait on a slow neighbor.
 
@@ -394,6 +748,56 @@ RDS --> B[Backups / cross-Region copy]
 > **Exam Keywords:** EC2 Auto Scaling, target tracking, Lambda concurrency, Fargate, ECS, EKS, Batch, EMR, queue depth, instance family.
 
 ### Task 3.3: Determine high-performing database solutions
+
+#### Architecture studio
+
+**ELI5 expansion:** Choose the database by the question you ask of the data, then reduce work with replicas, a cache, and sane connection management.
+
+**Reference architecture:** Application → cache check → proxy-managed relational writes/reads or a purpose-built NoSQL store → replica/cache for read pressure.
+
+```mermaid
+flowchart LR
+    APP[Application / Lambda] --> PROXY[RDS Proxy]
+    PROXY --> W[(Aurora/RDS writer)]
+    W --> RR[Read replica]
+    APP --> CACHE[ElastiCache]
+    APP -->|key-value at scale| DDB[(DynamoDB)]
+    RR --> READ[Read-heavy reports]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use Aurora/RDS for transactions and SQL, DynamoDB for predictable key-based access at scale, ElastiCache for hot reads, and RDS Proxy for connection bursts. | Fits the stated outcome with managed operations. | Use a read replica to scale relational reads. Use Multi-AZ for high availability. Use Redshift for warehouse analytics, not OLTP transaction processing. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Choose engine/version/instance class, Multi-AZ, replica count, IOPS, Aurora capacity range, DynamoDB partition key and capacity mode, cache TTL/eviction, and proxy connection limits.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- A hot DynamoDB partition throttles despite spare table capacity. Cache without TTL/invalidation serves stale data. Thousands of Lambda connections can exhaust a relational DB without a proxy.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **joins and transactions, key lookup at massive scale, hot repeated reads, too many connections, read-only reports**.
+>
+> **Common trap:** A Multi-AZ standby does not accept read traffic for scale. Adding a read replica does not solve a write bottleneck.
+>
+> **Official coverage retained:** database location, cache, access pattern, capacity/IOPS, connections/proxies, engines/migrations, replication, relational/non-relational/in-memory selection.
+
 
 **ELI5:** A database should match the shape of the question: transactions and joins, key-value access at scale, a graph, a document, a cache, or analytics.
 
@@ -438,6 +842,57 @@ RDS --> B[Backups / cross-Region copy]
 
 ### Task 3.4: Determine high-performing and/or scalable network architectures
 
+#### Architecture studio
+
+**ELI5 expansion:** Take each kind of traffic through the shortest suitable entrance, then use a traffic director that understands its protocol.
+
+**Reference architecture:** Viewer or on-premises source → edge/connection service → protocol-matched load balancer → private workloads and private service endpoints.
+
+```mermaid
+flowchart LR
+    G[Global users] --> CF[CloudFront: cached HTTP]
+    G --> GA[Global Accelerator: anycast TCP/UDP]
+    CF --> ALB[ALB: host/path HTTP]
+    GA --> NLB[NLB: TCP/UDP static IP]
+    NLB --> APP[Private targets]
+    APP --> PL[PrivateLink partner service]
+    DC[On premises] --> DX[Direct Connect / VPN] --> VPC[VPC]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | CloudFront caches web content; Global Accelerator improves global routing with static anycast IPs; ALB is Layer 7; NLB is Layer 4; GWLB inserts appliances. | Fits the stated outcome with managed operations. | PrivateLink publishes one private service. VPC peering connects two VPCs directly; Transit Gateway is a scalable hub for many VPCs; Direct Connect is dedicated hybrid connectivity. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Plan non-overlapping CIDRs, subnet sizes, route tables, health checks, ALB rules, NLB listeners/target groups, CloudFront cache behavior/origin, and Global Accelerator endpoint groups.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Overlapping CIDRs block future peering. A wrong route table blackholes traffic. CloudFront forwarding every request or cookie can destroy cache hit ratio.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **global static IP, cache content at edge, path routing, UDP/TCP, private partner service, many VPCs**.
+>
+> **Common trap:** CloudFront is a CDN cache; Global Accelerator is not a general cache. PrivateLink is service-level exposure, not full network transit.
+>
+> **Official coverage retained:** edge services, subnet tiers/routing/addressing, ELB, VPN/Direct Connect/PrivateLink, global/hybrid topology, placement and scalable network configuration.
+
+
 **ELI5:** Networking is the road system: choose the closest entrance, enough lanes, correct routes, and a traffic director that understands the protocol.
 
 **Why it matters:** A workload can have fast compute and storage but still be slow because traffic crosses unnecessary distance, routes incorrectly, or uses the wrong load balancer.
@@ -475,6 +930,60 @@ RDS --> B[Backups / cross-Region copy]
 > **Exam Keywords:** CloudFront, Global Accelerator, ALB, NLB, GWLB, PrivateLink, VPN, Direct Connect, CIDR, route table.
 
 ### Task 3.5: Determine high-performing data ingestion and transformation solutions
+
+#### Architecture studio
+
+**ELI5 expansion:** Bring data in at the speed it arrives, store it in a query-friendly shape, and transform it with the least machinery that meets the time window.
+
+**Reference architecture:** Batch or stream source → secure ingestion → S3 lake → catalog/transform → governed query → visualization.
+
+```mermaid
+flowchart LR
+    SRC[Files / databases / devices] --> IN{Ingestion pattern}
+    IN -->|Batch| DS[DataSync / Transfer Family]
+    IN -->|Streaming| K[Kinesis / MSK]
+    DS --> S3[(S3 data lake)]
+    K --> FH[Firehose / consumer]
+    FH --> S3
+    S3 --> G[Glue: CSV to Parquet]
+    G --> LF[Lake Formation permissions]
+    LF --> A[Athena]
+    A --> Q[Amazon Quick]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use Glue for managed ETL, Athena for SQL directly on S3, Kinesis for AWS-native streams, MSK for Kafka compatibility, DataSync for online file movement, and Snow Family for constrained/offline transfers. | Fits the stated outcome with managed operations. | Firehose delivers streams with minimal consumer operations; Kinesis Data Streams suits custom real-time consumers. EMR fits large/custom distributed transforms. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Choose stream shard/on-demand capacity and retention; configure Glue workers/job bookmarks/partitions; set S3 prefixes and Parquet compression; configure Lake Formation grants and Athena workgroup output controls.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Small CSV files increase query cost and job overhead. A public upload endpoint exposes data. Missing partitions make Athena scan too much data; non-idempotent stream consumers duplicate results.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **SQL on S3, scheduled ETL, CSV to Parquet, real-time telemetry, managed SFTP, data lake governance**.
+>
+> **Common trap:** Athena queries data; it is not the ETL engine. DataSync transfers files; Kinesis processes continuous records.
+>
+> **Official coverage retained:** Athena/Lake Formation/Quick, batch and streaming ingestion, DataSync/Storage Gateway, Glue, secure endpoints, throughput/volume, data lake/transfer/visualization/format transforms.
+
 
 **ELI5:** Ingestion brings data in, transformation makes it usable, and analytics asks questions of it. Pick based on size, speed, frequency, and who needs the result.
 
@@ -524,6 +1033,57 @@ RDS --> B[Backups / cross-Region copy]
 ## Domain 4: Design Cost-Optimized Architectures (20%)
 
 ### Task 4.1: Design cost-optimized storage solutions
+
+#### Architecture studio
+
+**ELI5 expansion:** Keep each byte in the cheapest tier that still meets its required retrieval time, durability, sharing, and retention.
+
+**Reference architecture:** Data creation → access classification → lifecycle transition/expiration → backup/restore policy → tagged cost review.
+
+```mermaid
+flowchart LR
+    UP[New uploads] --> STD[S3 Standard]
+    STD --> IT[Intelligent-Tiering]
+    IT --> GL[Glacier classes]
+    GL --> EXP[Expiration]
+    EFS[EFS files] --> B[Backup / archive]
+    ON[On premises] --> DS[DataSync] --> STD
+    TAG[Cost allocation tags] --> CE[Cost Explorer / Budgets]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use Intelligent-Tiering for unknown access patterns, Glacier classes for archival with retrieval trade-offs, EFS for shared files, FSx for specialized file systems, and EBS type by IOPS/throughput need. | Fits the stated outcome with managed operations. | Requester Pays shifts eligible request/transfer costs to downloaders. One Zone options reduce cost only when a single-AZ durability trade-off is acceptable. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set lifecycle transition/expiration and noncurrent-version rules, S3 versioning, Object Lock where required, EBS gp3 IOPS/throughput, EFS lifecycle, FSx capacity, and allocation tags.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Archive retrieval can be slow and charged. Forgetting noncurrent versions silently grows cost. A lifecycle can conflict with legal retention unless Object Lock/retention is designed first.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **unpredictable access, archive, deletion after N days, shared file system, charge downloaders, track team cost**.
+>
+> **Common trap:** Lowest storage price is not lowest total cost when retrieval, early deletion, request, backup, and operational requirements are ignored.
+>
+> **Official coverage retained:** Requester Pays, tags/billing tools, FSx/EFS/S3/EBS, backup, HDD/SSD, lifecycle, hybrid transfer, access/tiering, size and storage autoscaling.
+
 
 **ELI5:** Store data in the cheapest place that still retrieves it fast enough, protects it long enough, and supports the way it is used.
 
@@ -576,6 +1136,56 @@ RDS --> B[Backups / cross-Region copy]
 
 ### Task 4.2: Design cost-optimized compute solutions
 
+#### Architecture studio
+
+**ELI5 expansion:** Commit only to predictable baseline work; let elastic, interruptible, or nonproduction work use capacity that can disappear or stop.
+
+**Reference architecture:** Classify workload availability and utilization → choose compute platform → choose purchase option → scale/stop based on demand → continuously rightsize.
+
+```mermaid
+flowchart LR
+    BASE[Steady baseline] --> SP[Savings Plans]
+    PEAK[Elastic peak] --> OD[On-Demand ASG]
+    BATCH[Interruptible batch] --> SPOT[Spot Fleet / ASG]
+    EVENT[Irregular events] --> L[Lambda]
+    DEV[Dev schedule] --> STOP[Stop / hibernate]
+    MET[Compute Optimizer] --> RS[Rightsize]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use Savings Plans for steady commitment with flexibility, Spot for interruption-tolerant jobs, On-Demand for uncertain capacity, Lambda for sporadic events, and Fargate when containers should not require hosts. | Fits the stated outcome with managed operations. | Reserved Instances can fit a more specific reservation model. EC2 can beat Fargate at sustained utilization if the team accepts instance operations. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set mixed-instances policy/Spot allocation and interruption handling, ASG min/max, schedules, hibernation support, Lambda memory/concurrency, Fargate task CPU/memory, and budget alerts.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Spot without checkpointing loses work. A Savings Plan cannot rescue an oversized or idle fleet. Stopping instances saves compute but leaves EBS/storage costs.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **steady baseline, interruptible batch, nights and weekends, spiky API, rightsize, production versus development**.
+>
+> **Common trap:** Savings Plans are pricing commitments, not a capacity reservation and not a substitute for an availability design.
+>
+> **Official coverage retained:** cost tools/tags, Regions, Spot/RI/Savings Plans, edge/hybrid compute, instance families/sizes, containers/serverless/microservices, scaling/hibernation, ELB selection.
+
+
 **ELI5:** Pay for compute only while it produces value. Use flexible capacity for flexible work and commitments only for steady demand you understand.
 
 **Why it matters:** Idle instances, oversized families, always-on nonproduction systems, and the wrong purchase model are common avoidable costs.
@@ -621,6 +1231,57 @@ RDS --> B[Backups / cross-Region copy]
 
 ### Task 4.3: Design cost-optimized database solutions
 
+#### Architecture studio
+
+**ELI5 expansion:** Do not rent a huge always-on database to serve a small, intermittent, or cacheable workload; match the bill to the data model and demand.
+
+**Reference architecture:** Workload access pattern → suitable database type → cache/proxy → controlled replicas/backups → cost-tagged monitoring.
+
+```mermaid
+flowchart LR
+    APP[Application] --> C[ElastiCache]
+    C -->|miss| P[RDS Proxy]
+    P --> A[Aurora Serverless / RDS]
+    APP -->|key-value| D[DynamoDB]
+    ETL[Migration] --> DMS[AWS DMS]
+    REP[Reports] --> R[Redshift / Athena]
+    A --> SNAP[Retention-managed snapshots]
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use DynamoDB for suitable key-value/document access, Aurora/RDS for relational requirements, serverless relational capacity for variable use, ElastiCache for hot reads, and Redshift for warehouse analytics. | Fits the stated outcome with managed operations. | Provisioned capacity often fits sustained high utilization. Use read replicas only where the read workload and consistency model justify their recurring cost. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Set Aurora Serverless capacity range or RDS instance/storage/IOPS, DynamoDB on-demand/provisioned/autoscaling, cache TTL, proxy pool, snapshot retention, replica count, and DMS task settings.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- Unused replicas and long snapshot retention add cost. A cache with no expiry becomes stale. A database proxy protects connections but does not reduce expensive queries by itself.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **intermittent relational use, read-heavy catalog, key-value scale, analytics scans, reduce idle capacity, migrate engines**.
+>
+> **Common trap:** Serverless is not automatically cheaper for sustained heavy load; compare utilization, latency needs, and minimum capacity before choosing.
+>
+> **Official coverage retained:** cost tools/tags, caching, retention, capacity, proxy/connections, engines/migrations, replicas, relational/nonrelational/Aurora/DynamoDB, backup and columnar/time-series choices.
+
+
 **ELI5:** The cheapest database is the one that fits the data model and demand without paying for unused capacity, unnecessary copies, or avoidable reads.
 
 **Why it matters:** Database bills rise through idle provisioned capacity, excessive I/O, connection storms, replicas, retention, and selecting a complex engine for a simple access pattern.
@@ -664,6 +1325,58 @@ RDS --> B[Backups / cross-Region copy]
 > **Exam Keywords:** Aurora Serverless, DynamoDB, RDS, ElastiCache, snapshots, retention, DMS, schema migration, columnar, time series.
 
 ### Task 4.4: Design cost-optimized network architectures
+
+#### Architecture studio
+
+**ELI5 expansion:** Every unnecessary network hop is a toll booth: keep private traffic private and local, and cache repeat downloads near viewers.
+
+**Reference architecture:** Private subnet → endpoint for supported AWS services or local-AZ NAT for egress; hub routing for many VPCs; CDN for repeat public content.
+
+```mermaid
+flowchart LR
+    APP[Private app AZ-a] --> EP[S3 gateway endpoint]
+    EP --> S3[(S3)]
+    APP --> NATA[NAT gateway AZ-a]
+    NATA --> NET[Internet egress]
+    APPB[Private app AZ-b] --> NATB[NAT gateway AZ-b]
+    VPCS[Many VPCs] --> TGW[Transit Gateway]
+    USERS[Global viewers] --> CF[CloudFront cache] --> ORIGIN[Origin]
+    ON[On premises] --> VPN[VPN / Direct Connect] --> TGW
+```
+
+| Decision | Prefer | Why | Alternative / boundary |
+|---|---|---|---|
+| Primary selection | Use gateway endpoints for S3/DynamoDB private access, interface endpoints for PrivateLink services, a NAT gateway for managed egress, Transit Gateway for hub-and-spoke, and CloudFront for cacheable global delivery. | Fits the stated outcome with managed operations. | A NAT instance can cost less at low scale but creates instance management and availability work. VPN is quick encrypted internet connectivity; Direct Connect is dedicated predictable connectivity. |
+| Operational control | Managed AWS service first | Removes undifferentiated patching, failover, and fleet work. | Choose self-managed only when a named compatibility/control constraint requires it. |
+| Scale signal | Measure the bottleneck | Use a business or saturation metric rather than a guessed server count. | Alarm before an explicit quota or capacity ceiling is reached. |
+
+**Configuration knobs that make the design real**
+
+- Create endpoint routes/policies, deploy NAT per AZ when availability matters, keep workloads using their local NAT, set TGW route tables, configure CloudFront cache keys/TTL, and set VPN/DX bandwidth/redundancy.
+- Define least-privilege IAM roles and resource policies before deploying the data path.
+- Use CloudWatch metrics, alarms, logs, and a runbook that says who owns a failed request, job, or recovery.
+- Test the failure path, not only the healthy request path: deny an expected permission, stop one target, and verify the design degrades as intended.
+
+**Failure and operational implications**
+
+- One shared NAT can be cheaper but becomes an AZ dependency and adds cross-AZ data processing. Sending S3 access through NAT wastes money. Over-broad routes can send private traffic to public paths.
+- Make retrying components idempotent. A retry must not create a duplicate order, object, record, or payment.
+- Watch an outcome metric as well as infrastructure metrics: error rate, queue age, p95 latency, replication lag, recovery time, or cache hit rate.
+- Treat quotas as architecture inputs. Request increases and pre-create standby capacity before an incident, not during it.
+
+**Selection drill**
+
+1. Name the hard constraint: security boundary, availability target, latency, throughput, data model, compliance rule, or cost goal.
+2. Eliminate any answer that violates that constraint even if it solves a different problem well.
+3. Prefer the answer with the fewest operational components when it satisfies every stated requirement.
+4. Check whether the requirement implies an AZ failure, Region failure, a public path, cross-account access, or interruption tolerance.
+
+> **Exam signal:** Look for **NAT bill, private S3 access, many VPCs, cache images globally, dedicated bandwidth, avoid cross-AZ transfer**.
+>
+> **Common trap:** An endpoint is not a general internet gateway. A single NAT gateway is a cost/availability trade-off, not a universal best practice.
+>
+> **Official coverage retained:** cost tools/tags, ELB, NAT gateway versus NAT instance, private/dedicated/VPN connections, routing/TGW/peering/DNS, endpoints, CDN, review/throttling/bandwidth.
+
 
 **ELI5:** Network cost is often a toll problem: avoid unnecessary hops, avoid sending traffic through the public internet or NAT when a private AWS route fits, and cache repeat downloads at the edge.
 
@@ -764,3 +1477,514 @@ A relational product catalog has read latency spikes but writes are modest. Whic
 - Can you distinguish S3, EBS, EFS, and FSx by access pattern?
 - Can you choose Multi-AZ versus read replicas, CloudFront versus Global Accelerator, and VPN versus Direct Connect?
 - Can you identify a VPC endpoint, lifecycle rule, Spot capacity, cache, or rightsize opportunity in a cost scenario?
+
+
+---
+
+# Appendix A: Architecture keyword decision tree
+
+```mermaid
+flowchart TD
+    START[Read the requirement] --> H{What is the non-negotiable?}
+    H -->|Identity, data exposure, compliance| SEC[Secure: role, policy, encryption, private path]
+    H -->|AZ/Region failure or recovery target| REL[Reliable: Multi-AZ, health check, DR]
+    H -->|Latency, throughput, scale| PERF[Performant: cache, purpose-built service, autoscaling]
+    H -->|Idle spend, transfer, storage age| COST[Cost: lifecycle, rightsize, endpoint, purchase option]
+    SEC --> M[Choose managed service if it meets the requirement]
+    REL --> M
+    PERF --> M
+    COST --> M
+    M --> V[Verify every stated constraint and operational consequence]
+```
+
+| Requirement words | First architecture question | Strong starting services | Verify before choosing |
+|---|---|---|---|
+| workforce, many accounts, temporary access | Who authenticates and which account boundary applies? | IAM Identity Center, IAM roles, Organizations | Trust policy, SCP, MFA, resource policy |
+| customer sign-up, mobile/web user | Is this an application identity rather than AWS workforce access? | Cognito | User-pool auth flow and API authorization |
+| prevent SQL injection, bot, DDoS | Is the threat Layer 7 or volumetric? | WAF, Shield, CloudFront | Web ACL association and rate rules |
+| private AWS API/service access | Can traffic use an endpoint instead of NAT/public internet? | Gateway endpoint, interface endpoint, PrivateLink | Route table, DNS, endpoint policy |
+| absorb burst, retry later | Can producer and consumer be asynchronous? | SQS, DLQ, Lambda/ECS worker | Visibility timeout, idempotency, queue age |
+| fan-out event to many independent targets | Do receivers need content-based routing? | SNS, EventBridge | Filtering, retries, DLQs, event schema |
+| HA in one Region | What fails: host, AZ, database, NAT? | ALB, ASG, Multi-AZ RDS | Multi-AZ placement and health checks |
+| regional outage | What RPO and RTO are actually required? | Backup, pilot light, warm standby, active-active | Cross-Region data path and tested recovery |
+| shared files | Do several Linux clients need POSIX semantics? | EFS | Throughput, access points, mount/network access |
+| known key at vast scale | Is a key-value access pattern sufficient? | DynamoDB | Partition key distribution and secondary indexes |
+| joins and transactions | Does the workload need relational semantics? | RDS, Aurora | Engine compatibility, connections, replica/read split |
+| public cacheable content | Can viewers reuse the same response/object? | CloudFront | Cache key, TTL, invalidation, origin access |
+| global TCP/UDP, static IP | Is speed-to-regional endpoint more important than cache? | Global Accelerator, NLB | Endpoint health and protocol |
+| query data in S3 | Is SQL-on-files enough, or is ETL required first? | Athena, Glue, Lake Formation | Partitioning, Parquet, permissions |
+| unknown object access pattern | Can the storage tier move automatically? | S3 Intelligent-Tiering | Retrieval/monitoring charges and minimum duration |
+| predictable baseline / interruptible batch | What commitment and interruption risk are allowed? | Savings Plans, Spot, ASG | Checkpointing, fallback capacity, utilization |
+
+# Appendix B: Comparison tables for exam decisions
+
+## Identity and perimeter controls
+
+| Option | Principal / layer | Best use | Key configuration | Do not confuse with |
+|---|---|---|---|---|
+| IAM user | Individual AWS identity | Narrow legacy human case | MFA, access-key rotation, group/policy | Workload identity |
+| IAM role + STS | Workforce or workload temporary session | EC2/Lambda access and cross-account access | Trust policy + permissions policy | A permanent access key |
+| IAM Identity Center | Workforce federation | Central SSO across accounts | Permission sets, assignments, external IdP | Cognito customer identity |
+| Cognito user pool | Application customer | Sign-up/sign-in and tokens | App client, user pool, authorizer | IAM Identity Center |
+| SCP | Organization guardrail | Limit maximum permissions | Attach to root/OU/account | An allow/grant policy |
+| Resource policy | Resource-side authorization | Cross-account S3/KMS/SQS/SNS access | Principal, action, resource, conditions | Identity policy only |
+
+| Control | Scope | Stateful? | Best use | Key trap |
+|---|---|---:|---|---|
+| Security group | ENI/resource | Yes | Allow traffic between tiers by SG reference | Return traffic is automatic |
+| Network ACL | Subnet | No | Broad subnet allow/deny boundary | Must allow return ephemeral ports |
+| AWS WAF | HTTP(S) Layer 7 | N/A | SQLi, XSS, bot/rate controls | Does not replace Shield DDoS service |
+| AWS Shield | DDoS protection | N/A | Baseline DDoS protection / advanced support | Does not write web request rules |
+
+## Storage and integration
+
+| Service | Data model | Best use | Knobs that matter | Alternative when |
+|---|---|---|---|---|
+| S3 | Object | Data lake, backups, static assets | storage class, versioning, lifecycle, encryption | Shared POSIX file access is required |
+| EBS | Block | EC2 boot and database disks | gp3/io2, IOPS, throughput, snapshots | Many instances need shared files |
+| EFS | File / NFS | Shared elastic Linux file system | throughput/performance mode, access points | Windows/Lustre/NetApp features are required |
+| FSx | Specialized file | Windows, Lustre, NetApp, OpenZFS needs | file-system type, capacity, deployment | Generic Linux NFS is enough |
+
+| Service | Delivery pattern | Choose when | Configure | Trap |
+|---|---|---|---|---|
+| SQS | Queue | One worker should handle each buffered task | visibility timeout, DLQ, retention | Not fan-out by itself |
+| SNS | Pub/sub topic | Push the same message to many subscribers | subscriptions, filters, DLQs | Not durable worker buffering alone |
+| EventBridge | Event bus | Route events by content across targets/accounts | rules, event pattern, archive | Not a work queue substitute |
+| Step Functions | Stateful workflow | Ordered steps, choices, retries, compensation | Retry/Catch, Standard/Express, Map | Not necessary for one independent job |
+
+## Databases and recovery
+
+| Feature | Primary purpose | Replication behavior | Reads | Exam phrase |
+|---|---|---|---|---|
+| RDS Multi-AZ | Availability/failover | Synchronous standby within Region | Standby does not scale reads | "automatic failover" |
+| Read replica | Read scaling / promote for recovery | Usually asynchronous | Yes, route read traffic | "read-heavy" |
+| Aurora Global Database | Cross-Region DR/read locality | Cross-Region replication | Regional readers | "global low-latency reads" |
+| DynamoDB global tables | Multi-Region active-active key-value | Multi-Region replication | Local reads/writes | "active-active NoSQL" |
+
+| DR strategy | Running secondary environment | Typical RTO | Typical RPO | Cost / operational implication |
+|---|---|---|---|---|
+| Backup and restore | None until incident | Hours | Hours to day, design-dependent | Lowest cost, restore and scale during event |
+| Pilot light | Core data/services | Tens of minutes to hours | Low with replication | Scale application tier after failover |
+| Warm standby | Reduced but functional stack | Minutes | Low | Pay for running secondary baseline |
+| Active-active | Full multiple Regions | Seconds to minutes | Very low | Highest complexity, routing and conflict design |
+
+## Compute, network, and cost
+
+| Option | Best fit | Scaling / operational model | Beware |
+|---|---|---|---|
+| EC2 | Custom OS, special hardware, steady hosts | You select/manage instances and ASG | Idle capacity and patching |
+| Lambda | Event-driven short execution | Scales by concurrency | Timeout, downstream connection bursts |
+| Fargate | Container workloads without nodes | Task CPU/memory, service autoscaling | Sustained utilization may favor EC2 |
+| ECS on EC2 | Container efficiency with host control | You manage cluster capacity | Node operations |
+
+| Load balancer | Layer / protocol | Select when | Avoid if |
+|---|---|---|---|
+| ALB | Layer 7 HTTP/HTTPS | host/path/header routing, web apps | Need TCP/UDP or static IP focus |
+| NLB | Layer 4 TCP/UDP/TLS | very high performance, static IP | Need rich HTTP routing |
+| GWLB | Network appliance insertion | transparent firewall/inspection fleet | You only need web routing |
+
+| Network choice | Best use | Primary benefit | Boundary |
+|---|---|---|---|
+| CloudFront | Cacheable public HTTP content | Edge cache lowers latency/origin load | Not generic TCP acceleration |
+| Global Accelerator | Global TCP/UDP and static anycast IP | AWS backbone to healthy endpoints | Does not cache application content |
+| Site-to-Site VPN | Encrypted hybrid connectivity quickly | Uses internet | Variable internet path |
+| Direct Connect | Predictable dedicated hybrid connection | Consistent private connectivity | Lead time/cost; use resilient design |
+| PrivateLink | Consume/publish one private service | No broad VPC connectivity | Not transitive routing |
+
+| Cost lever | Use when | Guardrail |
+|---|---|---|
+| On-Demand | Demand is unknown or cannot be interrupted | Rightsize and scale down |
+| Savings Plans | Baseline spend is predictable | Commitment does not fix overprovisioning |
+| Spot | Job tolerates interruption | Checkpoint/retry and diversify capacity |
+| S3 lifecycle | Access decreases with age | Check retrieval and retention requirements |
+| Gateway endpoint | Private S3/DynamoDB traffic | Configure routes/policy; not generic egress |
+| NAT per AZ | Resilient private egress is required | Higher fixed cost; keep traffic local to AZ |
+
+# Appendix C: Critical rules and numbers
+
+| Rule or number | Why it matters on SAA-C03 |
+|---|---|
+| 50 scored + 15 unscored questions | Answer every question; unscored items are not identified. |
+| 130 minutes | Practice reading constraints before choosing services. |
+| 720 / 1000 scaled pass score | Domain scores are feedback; the exam uses compensatory scoring. |
+| 30% / 26% / 24% / 20% | Secure, Resilient, High-Performing, Cost-Optimized domain weights. |
+| 3 AZs minimum per Region | Design AZ-level availability, but verify an actual Region's availability. |
+| S3 object maximum: 5 TB | Use multipart upload for large objects. |
+| Lambda maximum runtime: 15 minutes | Use Batch, ECS/Fargate, or EMR for longer jobs. |
+| Lambda memory: 128 MB–10,240 MB | Memory selection also affects available CPU. |
+| Default Lambda account concurrency: 1,000 | A quota, not a scaling guarantee; request increases where needed. |
+| SQS visibility timeout | Must cover processing plus safe buffer; otherwise messages may be redelivered. |
+| SQS standard delivery | At-least-once; consumers must be idempotent. |
+| Security groups | Stateful; allow rules only, return traffic is automatically permitted. |
+| NACLs | Stateless; explicitly permit return traffic as well. |
+| Multi-AZ RDS | Availability and automatic failover, not read scaling. |
+| Read replica | Read scale and potential promotion; generally asynchronous. |
+| EBS | AZ-scoped block storage; snapshots provide durable copies. |
+| S3 durability | Designed for 11 nines durability; availability and replication requirements are separate decisions. |
+| Gateway endpoint | Private route for S3/DynamoDB without NAT data processing. |
+| RPO | Maximum acceptable data loss measured in time. |
+| RTO | Maximum acceptable recovery time. |
+
+# Appendix D: 30 exam traps and keyword pairs
+
+1. **IAM role** means temporary credentials; **IAM user access key** is not the default workload answer.
+2. **SCP** limits maximum permissions; it does not grant an allow.
+3. **Cognito** is customer identity; **IAM Identity Center** is workforce SSO.
+4. **WAF** filters HTTP(S); **Shield** addresses DDoS protection.
+5. **Security group** is stateful; **NACL** is stateless.
+6. **Public subnet** has a route to an internet gateway; a public IP alone does not make every subnet public.
+7. **NAT gateway** is outbound for private subnets; it cannot receive unsolicited inbound connections.
+8. **VPC endpoint** can avoid NAT for supported AWS services; it is not general internet egress.
+9. **KMS encryption** does not replace IAM or resource authorization.
+10. **ACM** manages supported AWS-integrated TLS certificates; it is not a database credential vault.
+11. **Secrets Manager** supports secret rotation; **Parameter Store** is often simpler configuration storage.
+12. **SQS** buffers work; **SNS** fans out notifications.
+13. **EventBridge** matches event content; **Step Functions** manages stateful workflow steps.
+14. **FIFO SQS** preserves order per message group; it does not make every distributed side effect magically exactly-once.
+15. **DLQ** preserves repeated failures; it does not cure the underlying poison message.
+16. **Multi-AZ** is availability; **read replica** is primarily read scale.
+17. **Backup** is a copy; **DR** includes a tested recovery architecture and RPO/RTO.
+18. **CloudFront** caches; **Global Accelerator** routes traffic quickly using anycast IPs.
+19. **ALB** understands HTTP; **NLB** handles Layer 4 TCP/UDP and static IP needs.
+20. **PrivateLink** exposes a service; **Transit Gateway** connects many networks.
+21. **S3** is object storage; **EFS** is shared file storage; **EBS** is attached block storage.
+22. **EFS** is shared Linux NFS; **FSx** is selected for specialized filesystem behavior.
+23. **DynamoDB** starts from known key access patterns; **RDS/Aurora** starts from relational SQL/transactions.
+24. **ElastiCache** reduces repeated reads; it is not the durable system of record.
+25. **RDS Proxy** manages connections; it does not add query indexes or read replicas.
+26. **Glue** transforms/categorizes data; **Athena** queries data in S3.
+27. **Kinesis** handles continuous records; **DataSync** moves existing files/data.
+28. **Spot** is for interruption-tolerant workloads; **Savings Plans** are steady-spend commitments.
+29. **Single NAT gateway** can reduce line-item cost; per-AZ NAT reduces AZ dependency and cross-AZ transfer.
+30. **Most cost-effective** still means meeting the stated availability, security, and performance requirements.
+
+# Appendix E: Original scenario questions with hidden rationales
+
+## Question 1: Central engineering access
+
+A company has 30 AWS accounts. Engineers authenticate with a corporate identity provider, and production access must be temporary, auditable, and centrally administered. Which design requires the least credential management?
+
+- A. Create one IAM user and access key per engineer in each account.
+- B. Use IAM Identity Center federated with the corporate identity provider and assign permission sets to accounts.
+- C. Put all engineers in an Amazon Cognito user pool and attach an S3 bucket policy.
+- D. Share the root credentials through a password vault.
+
+<details><summary>Answer and rationale</summary>**B** is correct. IAM Identity Center provides workforce federation, central account assignment, and short-lived role sessions. A creates permanent credentials and a large operational burden. C is for application customers, not workforce AWS account access. D violates root-user security practices.</details>
+
+## Question 2: Private database password rotation
+
+Private ECS tasks need a database password that rotates automatically. The tasks must retrieve it without a public internet path. Which combination is best?
+
+- A. Put the password in the container image and use a NAT gateway.
+- B. Store it in Secrets Manager and use an interface VPC endpoint with a task IAM role.
+- C. Put it in a public S3 object encrypted with SSE-S3.
+- D. Use an IAM user access key in an environment variable.
+
+<details><summary>Answer and rationale</summary>**B** is correct. Secrets Manager supports managed secret rotation, the IAM role controls retrieval, and an interface endpoint keeps supported traffic private. A and D embed long-lived secrets. C makes the secret retrieval design needlessly exposed and lacks rotation.</details>
+
+## Question 3: Burst-tolerant orders
+
+An order API receives ten times its normal traffic during promotions. Orders may take several minutes to process, while customers only need an immediate acknowledgement. What design is best?
+
+- A. API Gateway synchronously invokes one EC2 worker.
+- B. API Gateway writes to SQS; workers scale based on queue depth and use a DLQ.
+- C. Increase the API Gateway timeout until the worker finishes.
+- D. Send each order directly to an RDS read replica.
+
+<details><summary>Answer and rationale</summary>**B** decouples intake from processing and provides buffering, scaling, and failure handling. A/C couple customer latency to worker capacity. D is wrong because a read replica is not the destination for transactional writes.</details>
+
+## Question 4: Regional recovery objective
+
+A business requires recovery from a regional outage within minutes and can lose only a few seconds of data. It can afford a running secondary environment. Which direction best fits?
+
+- A. Periodic backups restored manually in the recovery Region.
+- B. Pilot light with no replicated data.
+- C. Warm standby with cross-Region replication and failover routing.
+- D. One Multi-AZ database in the primary Region only.
+
+<details><summary>Answer and rationale</summary>**C** best matches a low RTO and low RPO without necessarily paying for full active-active operation. A is usually slower. B without replicated data fails the RPO requirement. D handles local AZ failure, not a regional outage.</details>
+
+## Question 5: Shared render inputs
+
+Hundreds of Linux render workers in multiple AZs need concurrent access to the same directory tree. Completed files should be retained cheaply for years. Which storage design fits?
+
+- A. EBS volumes shared among all workers and EBS snapshots for archive.
+- B. EFS for active shared files and S3 lifecycle rules for completed objects.
+- C. S3 mounted as a required POSIX file system for all writes.
+- D. Instance store for active files and no archive.
+
+<details><summary>Answer and rationale</summary>**B** separates shared POSIX file access from low-cost object archive. A is not a normal shared filesystem design. C confuses object storage with POSIX behavior. D loses data on instance failure.</details>
+
+## Question 6: Read-heavy relational catalog
+
+A product catalog uses Aurora PostgreSQL. Writes are moderate, but repeated product reads create high latency. Thousands of Lambda invocations also open connections at once. Which pair addresses both pressure points?
+
+- A. Multi-AZ and a larger writer.
+- B. ElastiCache and RDS Proxy.
+- C. DynamoDB global tables and CloudFront only.
+- D. A second NAT gateway and an NACL.
+
+<details><summary>Answer and rationale</summary>**B** caches repeat reads and pools database connections. A improves availability, not the primary read/connection bottlenecks. C may require a data-model migration and does not solve relational connection management. D is unrelated.</details>
+
+## Question 7: Global game endpoint
+
+A latency-sensitive TCP game service needs two static anycast IP addresses and must route users to healthy regional endpoints. The payload is not cacheable web content. Which service is the fit?
+
+- A. CloudFront
+- B. Global Accelerator
+- C. Application Load Balancer only
+- D. S3 Transfer Acceleration
+
+<details><summary>Answer and rationale</summary>**B** provides static anycast IPs and uses the AWS global network to healthy endpoints for TCP/UDP workloads. A is a CDN cache. C has no global anycast entry point by itself. D accelerates transfers to S3, not game endpoint routing.</details>
+
+## Question 8: Lake query cost
+
+A team receives daily CSV files into S3 and queries years of data with Athena. Queries are slow and scan too much data. What is the most direct architecture improvement?
+
+- A. Convert data to partitioned Parquet using Glue, then query through Athena.
+- B. Send all files through an internet-facing NAT gateway.
+- C. Place a read replica in front of S3.
+- D. Use an EBS volume for every CSV file.
+
+<details><summary>Answer and rationale</summary>**A** uses a managed transform to create a columnar, partitioned dataset that Athena can scan efficiently. The other choices do not make file analytics more efficient and several misuse unrelated services.</details>
+
+## Question 9: Savings without data loss
+
+Private instances in two AZs reach S3 through NAT gateways. NAT processing charges are growing. The application must remain private and highly available. What change lowers cost without weakening the design?
+
+- A. Give every instance a public IP and remove NAT.
+- B. Create an S3 gateway VPC endpoint and keep one NAT gateway per AZ for other egress.
+- C. Move all instances into one AZ with one NAT gateway.
+- D. Use a security group rule that allows S3 traffic.
+
+<details><summary>Answer and rationale</summary>**B** routes S3 traffic privately without NAT processing while retaining local-AZ egress resilience for destinations that need NAT. A weakens isolation; C adds an AZ failure risk; D does not create a route.</details>
+
+## Question 10: Interruptible nightly processing
+
+A nightly image-processing job can restart from checkpoints and has no strict completion deadline. The company wants the lowest compute cost while retaining automatic scale-out. Which approach is most suitable?
+
+- A. Fixed On-Demand EC2 instances running all day.
+- B. Spot Instances in an Auto Scaling group or AWS Batch with checkpoint/retry handling.
+- C. A large Reserved Instance for each job.
+- D. RDS Multi-AZ with read replicas.
+
+<details><summary>Answer and rationale</summary>**B** uses discounted interruptible capacity because the workload can resume safely. A wastes idle time. C adds a commitment that may not match the job's schedule. D is a database availability/read-scale design, not compute processing.</details>
+
+# Appendix F: Four-week study plan
+
+| Week | Primary objective | Daily study rhythm | Hands-on / recall deliverable |
+|---|---|---|---|
+| 1 | Secure architectures (30%) | Day 1 identities; Day 2 VPC segmentation; Day 3 encryption/backups; Day 4 WAF/endpoints; Day 5 review | Draw the multi-account and private three-tier diagrams from memory; explain every policy layer. |
+| 2 | Resilient architectures (26%) | Day 1 queues/events; Day 2 scaling; Day 3 Multi-AZ; Day 4 DR; Day 5 scenarios | Build a queue/DLQ thought experiment; state RPO/RTO and choose a DR strategy for four businesses. |
+| 3 | High performance (24%) | Day 1 storage; Day 2 compute; Day 3 databases; Day 4 network; Day 5 ingestion | Produce one storage, compute, database, network, and lake decision table without looking. |
+| 4 | Cost plus integration (20%) | Day 1 storage cost; Day 2 compute pricing; Day 3 database cost; Day 4 network cost; Day 5 full mock/review | Answer all ten scenarios, explain rejected options aloud, and revisit weak keywords. |
+
+## Daily 45-minute loop
+
+1. **10 minutes:** Read one task's ELI5 explanation and redraw its reference architecture.
+2. **10 minutes:** Cover the answer column of a comparison table and choose from the requirement wording.
+3. **10 minutes:** Explain one trap in your own words, including why the tempting alternative is wrong.
+4. **10 minutes:** Answer two scenario questions or invent one with an RPO/RTO, access pattern, or cost constraint.
+5. **5 minutes:** Record one uncertain keyword for targeted review tomorrow.
+
+# Final review checklist
+
+- [ ] I can justify IAM roles, policy layers, workforce federation, Cognito, and private service access.
+- [ ] I can draw a segmented VPC and distinguish SGs from NACLs, WAF from Shield, and NAT from endpoints.
+- [ ] I can turn an RPO/RTO statement into a DR strategy and explain why Multi-AZ is not cross-Region DR.
+- [ ] I can select SQS, SNS, EventBridge, or Step Functions based on delivery and orchestration semantics.
+- [ ] I can select S3, EBS, EFS, and FSx from data access patterns and performance knobs.
+- [ ] I can distinguish relational reads, Multi-AZ, replicas, cache, proxy, and DynamoDB access patterns.
+- [ ] I can select ALB, NLB, GWLB, CloudFront, Global Accelerator, VPN, Direct Connect, PrivateLink, and Transit Gateway.
+- [ ] I can explain how Glue, Athena, Kinesis, DataSync, Lake Formation, and EMR fit a data-lake architecture.
+- [ ] I can find cost waste in idle compute, storage lifecycle, backup retention, NAT paths, and unnecessary data transfer.
+
+
+# Appendix G: The six Well-Architected pillars in one application
+
+Use the pillars as a trade-off conversation, not six independent checklists. A design can be very cheap and still be wrong if it misses a recovery target; it can be highly available and still be wrong if it exposes customer records.
+
+```mermaid
+flowchart TB
+    APP[Customer application] --> OP[Operational Excellence\nIaC, alarms, runbooks]
+    APP --> SE[Security\nroles, private tiers, KMS]
+    APP --> RE[Reliability\nMulti-AZ, queue, backups]
+    APP --> PE[Performance Efficiency\ncache, autoscaling, right service]
+    APP --> CO[Cost Optimization\nlifecycle, endpoints, rightsize]
+    APP --> SU[Sustainability\nmanaged elastic capacity, reduce waste]
+    OP --- SE
+    SE --- RE
+    RE --- PE
+    PE --- CO
+    CO --- SU
+```
+
+## Operational Excellence: make the architecture repeatable and observable
+
+**ELI5:** Do not rely on the one person who remembers which console button fixes production. Give the team a recipe, gauges, and an incident playbook.
+
+| Design choice | Concrete implementation | Failure prevented | Exam interpretation |
+|---|---|---|---|
+| Repeatable infrastructure | CloudFormation stacks, parameters, change sets, tags | Manual configuration drift | "Most operationally efficient" favors automation/managed services |
+| Actionable observability | CloudWatch metrics, logs, alarms, dashboards; CloudTrail for API activity | Silent failures and slow detection | Select the metric that reflects user impact |
+| Safe operations | Runbooks, rollback plan, health checks, immutable replacement | Risky in-place repair | Replace unhealthy ASG/ECS instances |
+| Learning loop | Post-incident review, quota review, cost review | Repeated incident or surprise scale limit | Inspect existing workload metrics before rightsizing |
+
+**In context:** An SQS worker architecture needs an alarm on `ApproximateAgeOfOldestMessage`, not just EC2 CPU. Queue age tells the operator whether customers are waiting. A runbook can say: inspect the DLQ, identify the poison message, correct it, replay safely with an idempotency key, and observe the queue draining.
+
+## Security: reduce blast radius at every boundary
+
+**ELI5:** A locked front door is useful, but a safe house also locks rooms, labels valuables, and records who entered.
+
+| Boundary | Control | Concrete question | Consequence if omitted |
+|---|---|---|---|
+| Human identity | IAM Identity Center, MFA, least-privilege role | Can a developer reach production only by an audited role session? | Shared, permanent, hard-to-revoke access |
+| Workload identity | IAM role, STS, resource policy | Does the Lambda/ECS task need a static key? | Secrets leak into code, images, or logs |
+| Network | Private subnet, SG references, endpoint | Is the database reachable only from its application tier? | Internet or lateral exposure |
+| Data | KMS, TLS, backup vault, lifecycle | Who can decrypt, and how is restore tested? | Exposed or unrecoverable data |
+| Detection | CloudTrail, GuardDuty, Macie, Config | Can the team find an unusual call or sensitive S3 object? | Incident discovered late |
+
+**In context:** A private workload that accesses Secrets Manager through an interface endpoint, with an IAM task role scoped to one secret ARN, has a smaller blast radius than a public instance with a shared access key. The endpoint is a route decision; the IAM policy is still the authorization decision.
+
+## Reliability: design for the failures that matter
+
+**ELI5:** Assume individual machines, an AZ, and sometimes a Region can fail. Decide which failures the business can wait through and which it cannot.
+
+| Failure scope | Typical pattern | Validate with | Do not overclaim |
+|---|---|---|---|
+| Instance/process | ASG, ECS service, Lambda retry | Target health and replacement test | One instance restart is not AZ resilience |
+| Availability Zone | Multi-AZ ALB/ASG/RDS, per-AZ NAT | Remove one AZ path in a test | Multi-AZ does not cover regional loss |
+| Region | Replication + Route 53 failover + DR runbook | Timed recovery exercise | A backup alone has unknown RTO |
+| Downstream dependency | SQS, retries, DLQ, circuit-breaking behavior | Simulate timeout/5xx | Retry without idempotency can amplify damage |
+
+**In context:** A payment workflow can accept an order to SQS during a temporary inventory outage. Workers retry with backoff, move repeatedly failing tasks to a DLQ, and use an idempotency key. This is more reliable than holding an API connection open while every dependency recovers.
+
+## Performance Efficiency: eliminate the real bottleneck
+
+**ELI5:** Make the slow line faster by finding the actual slow station, not by buying a larger building.
+
+| Symptom | First measurement | Likely architecture lever | Misleading quick fix |
+|---|---|---|---|
+| Repeat read latency | Cache hit rate, database CPU/query time | ElastiCache and a TTL/invalidation strategy | Only increase DB instance size |
+| Async backlog | Queue age and visible messages | Scale worker concurrency on queue pressure | Scale API instances on CPU |
+| Connection exhaustion | Database connections / proxy metrics | RDS Proxy, pool sizing | Add read replicas for writes/connections |
+| Global web latency | Cache hit ratio, viewer geography | CloudFront / regional placement | Treat Global Accelerator as a page cache |
+| Slow lake queries | Bytes scanned, partitions, file sizes | Parquet, partitions, Glue compaction | Add compute without changing data layout |
+
+**In context:** When an API is slow because the database is saturated by repeated catalog reads, caching popular values can lower latency and database load. Read replicas help if the workload needs fresh relational reads that cannot be served safely from cache. The correct answer follows the access pattern.
+
+## Cost Optimization: minimize total cost while satisfying requirements
+
+**ELI5:** A cheap component that causes downtime, retrieval fees, or engineering work can be expensive overall. Pay for useful capacity, not merely low unit price.
+
+| Cost signal | Investigation | Better-fit lever | Guardrail |
+|---|---|---|---|
+| Large NAT data-processing bill | Which destinations are AWS services? | Gateway/interface endpoint | Endpoint must support the target and have correct routes |
+| Idle EC2/Fargate | Utilization by environment and schedule | ASG schedule, stop nonprod, Lambda/Fargate/Spot | Preserve production availability requirements |
+| Growing S3 bill | Object age, version count, access frequency | Lifecycle, Intelligent-Tiering, expiration | Respect restore and retention requirements |
+| RDS cost | CPU, connections, read mix, backup retention | Cache, proxy, serverless/rightsizing | Do not remove Multi-AZ if availability is required |
+| Cross-AZ/Region transfer | Flow paths and topology | Keep traffic local, endpoint, cache, routing review | Avoid introducing a single AZ failure point |
+
+**In context:** Sending private S3 traffic through NAT is often a direct cost smell. An S3 gateway endpoint removes that NAT path. However, a single shared NAT may still be a false economy for applications that must remain available during an AZ failure.
+
+## Sustainability: avoid running and storing what has no value
+
+**ELI5:** The cleanest server is the one that never had to run. Reduce waste with elastic managed services, efficient data formats, and timely deletion.
+
+| Workload choice | Sustainability improvement | Complementary exam outcome |
+|---|---|---|
+| Scale-to-zero / event-driven compute | Avoids idle servers | Cost optimization |
+| Auto Scaling and right sizing | Matches capacity to demand | Performance efficiency + cost |
+| S3 lifecycle and expiration | Avoids retaining unnecessary data | Cost + compliance alignment |
+| Parquet and partitions | Scans less data for analytics | Performance + lower compute use |
+| Managed Multi-AZ services | Shares efficient managed fleet operations | Reliability without building spare hosts manually |
+
+# Appendix H: Requirement-to-service mini drills
+
+| If the scenario says... | Explain the decision, not just the service |
+|---|---|
+| "one application needs temporary access to another account's bucket" | Use an IAM role with a trust policy plus the required identity/resource/KMS permissions; do not distribute a shared key. |
+| "block common web attacks before they reach the app" | Associate a WAF web ACL with CloudFront, ALB, or API Gateway; Shield addresses DDoS. |
+| "private workload must read S3 cheaply" | Add an S3 gateway endpoint and route it privately; security groups alone do not create the path. |
+| "messages must be processed later when capacity returns" | Use SQS plus DLQ and idempotent workers; set visibility timeout longer than processing. |
+| "two consumers need the same business event" | Fan out with SNS or route with EventBridge; each consumer can receive independently. |
+| "database writer must fail over in an AZ outage" | Use Multi-AZ; do not describe a read replica as the synchronous standby. |
+| "global users load static images repeatedly" | Use CloudFront with an appropriate cache key/TTL and controlled origin access. |
+| "millions of predictable key lookups" | Model DynamoDB partition/sort keys around the access pattern; avoid hot partitions. |
+| "Linux fleet shares active media files" | Use EFS; publish completed objects to S3 for low-cost lifecycle management. |
+| "long analytics retention with occasional SQL" | Use S3 lake + Parquet/partitions + Athena; Glue performs needed transforms. |
+| "batch job can stop and restart" | Use Spot with checkpoint/retry design rather than uninterrupted On-Demand capacity. |
+| "NAT cost rises with S3 and DynamoDB traffic" | Use gateway endpoints; then review whether remaining egress needs NAT per AZ. |
+| "must recover in minutes with little data loss" | Choose warm standby or active-active according to exact RPO/RTO; name cross-Region replication and failover. |
+| "frequent secret rotation" | Secrets Manager with rotation and role-based retrieval; do not embed passwords in deployment artifacts. |
+| "path-based routes to microservices" | ALB listener rules route HTTP requests; NLB is not the Layer 7 path-routing answer. |
+
+
+# Appendix I: Fast architecture review cards
+
+## Card 1: Secure multi-account application
+
+| Layer | Design | Why it belongs | One check |
+|---|---|---|---|
+| Governance | Organizations, OUs, SCPs, Control Tower | Separates blast radius and sets maximum permissions | SCP does not block required logging/backup service actions |
+| Workforce | IAM Identity Center + permission sets | Central temporary workforce access | Production assignment requires MFA/approval condition where needed |
+| Application | IAM roles for compute | No embedded access keys | Trust policy names only the intended service/account |
+| Data | S3/RDS KMS encryption + resource policy | Data access is explicit and auditable | Key policy permits required backup/restore path |
+| Audit | Organization CloudTrail + Config | Records API/configuration changes | Logs are retained in a protected account |
+
+## Card 2: Segmented VPC traffic rules
+
+| Source | Destination | Permit with | Why |
+|---|---|---|---|
+| Internet | Public ALB on 443 | ALB SG ingress / WAF | Public TLS entry point only |
+| Public ALB | Private app on application port | App SG source = ALB SG | No application CIDR maintenance |
+| Private app | DB on database port | DB SG source = app SG | Database has no public client path |
+| Private app | S3 | Gateway endpoint route/policy | Private path with no NAT processing |
+| Private app | Internet patch/API | NAT gateway in same AZ | Initiated egress without inbound exposure |
+
+## Card 3: Data protection sequence
+
+1. Classify information and decide residency/retention before copying it.
+2. Use TLS for movement and KMS-integrated encryption at rest.
+3. Grant decrypt/use permissions only to the required role and workload path.
+4. Create backups/replicas that meet stated RPO and retention requirements.
+5. Test a restore using the same key and access conditions that an incident will use.
+6. Archive or delete by lifecycle only after legal and recovery needs are satisfied.
+
+## Card 4: Decoupled high-availability sequence
+
+1. Place stateless targets in at least two AZs behind a health-checked load balancer.
+2. Put asynchronous work in SQS and set a DLQ plus visibility timeout.
+3. Scale API and workers independently using request/queue metrics.
+4. Keep durable state in a managed Multi-AZ service with backups.
+5. Make consumers idempotent because retries and redelivery are normal.
+6. Add a cross-Region plan only when the requirement names regional recovery/RPO/RTO.
+
+## Card 5: Cost review in five questions
+
+| Question | Likely action |
+|---|---|
+| Are servers idle by schedule or utilization? | Stop nonproduction, Auto Scale, rightsize, or use serverless. |
+| Can the job restart? | Use Spot with checkpointing and fallback capacity. |
+| Does data cool down predictably? | Use lifecycle/archive classes and expiration. |
+| Is private AWS service traffic traversing NAT? | Add appropriate VPC endpoints and route correctly. |
+| Are users downloading the same public objects repeatedly? | Use CloudFront with intentional cache behavior. |
+
+## Exam answer elimination checklist
+
+- Reject an answer that uses permanent keys when a role and STS fit.
+- Reject a public database or broad `0.0.0.0/0` path when private tiers are required.
+- Reject a single-AZ answer when the scenario explicitly requires AZ fault tolerance.
+- Reject backup-only when RTO requires minutes and a running recovery environment is justified.
+- Reject a read replica when the requirement is synchronous availability or write scale.
+- Reject SQS when every subscriber must receive the event unless it is paired with fan-out.
+- Reject CloudFront when the workload needs TCP/UDP acceleration rather than HTTP caching.
+- Reject S3/EBS when the required storage semantics point to EFS/FSx.
+- Reject a cheaper option that violates a stated compliance, latency, or availability constraint.
+
+
+## Last-minute recall
+
+- State the constraint first, then select the managed architecture that satisfies it.
+- Name one configuration knob and one failure mode for every service choice.
+- Explain why the nearest distractor fails the requirement.
