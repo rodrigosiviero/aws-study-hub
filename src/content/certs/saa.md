@@ -53,9 +53,9 @@ O --> W
 
 ---
 
-# Domain 1 — Design Secure Architectures (30%)
+## Domain 1: Design Secure Architectures (30%)
 
-## Task 1.1 — Design secure access to AWS resources
+### Task 1.1: Design secure access to AWS resources
 
 **ELI5:** Identity answers “who is asking?” and authorization answers “what may they do?” AWS should give each human or workload only the small set of permissions it needs.
 
@@ -96,7 +96,7 @@ O --> W
 >
 > **Exam Keywords:** least privilege, MFA, STS, assume role, trust policy, federation, IAM Identity Center, SCP, resource policy, shared responsibility.
 
-## Task 1.2 — Design secure workloads and applications
+### Task 1.2: Design secure workloads and applications
 
 **ELI5:** A secure application has locked doors at every layer: network paths, user login, application secrets, and protection against hostile requests.
 
@@ -146,7 +146,7 @@ APP --> DB[Private database subnet]
 >
 > **Exam Keywords:** public/private subnet, security group, NACL, WAF, Shield, Cognito, GuardDuty, Macie, Secrets Manager, PrivateLink, VPN, Direct Connect.
 
-## Task 1.3 — Determine appropriate data security controls
+### Task 1.3: Determine appropriate data security controls
 
 **ELI5:** Data needs labels, locked storage, protected travel, a recovery copy, and a plan for when to delete it.
 
@@ -189,9 +189,9 @@ APP --> DB[Private database subnet]
 
 ---
 
-# Domain 2 — Design Resilient Architectures (26%)
+## Domain 2: Design Resilient Architectures (26%)
 
-## Task 2.1 — Design scalable and loosely coupled architectures
+### Task 2.1: Design scalable and loosely coupled architectures
 
 **ELI5:** Build components like separate queues at a busy kitchen. One slow station should not stop ordering, and more cooks can be added when demand rises.
 
@@ -255,7 +255,7 @@ E --> A[Analytics]
 >
 > **Exam Keywords:** SQS, SNS, EventBridge, API Gateway, ALB, Step Functions, Lambda, Fargate, ECS, EKS, stateless, read replica, cache.
 
-## Task 2.2 — Design highly available and/or fault-tolerant architectures
+### Task 2.2: Design highly available and/or fault-tolerant architectures
 
 **ELI5:** Availability means the service stays usable; fault tolerance means it can keep working even when parts fail. Spread important parts so one failure cannot end the service.
 
@@ -317,9 +317,9 @@ RDS --> B[Backups / cross-Region copy]
 
 ---
 
-# Domain 3 — Design High-Performing Architectures (24%)
+## Domain 3: Design High-Performing Architectures (24%)
 
-## Task 3.1 — Determine high-performing and/or scalable storage solutions
+### Task 3.1: Determine high-performing and/or scalable storage solutions
 
 **ELI5:** Pick storage by how the application touches data: named objects, a shared folder, or a disk attached to a server.
 
@@ -353,7 +353,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** S3, EFS, EBS, object, file, block, IOPS, throughput, Storage Gateway.
 
-## Task 3.2 — Design high-performing and elastic compute solutions
+### Task 3.2: Design high-performing and elastic compute solutions
 
 **ELI5:** Compute is the engine. Choose the engine type, make more engines appear when demand rises, and avoid making every engine wait on a slow neighbor.
 
@@ -393,7 +393,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** EC2 Auto Scaling, target tracking, Lambda concurrency, Fargate, ECS, EKS, Batch, EMR, queue depth, instance family.
 
-## Task 3.3 — Determine high-performing database solutions
+### Task 3.3: Determine high-performing database solutions
 
 **ELI5:** A database should match the shape of the question: transactions and joins, key-value access at scale, a graph, a document, a cache, or analytics.
 
@@ -436,7 +436,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** Aurora, RDS, DynamoDB, ElastiCache, read replica, Multi-AZ, RDS Proxy, IOPS, relational, NoSQL.
 
-## Task 3.4 — Determine high-performing and/or scalable network architectures
+### Task 3.4: Determine high-performing and/or scalable network architectures
 
 **ELI5:** Networking is the road system: choose the closest entrance, enough lanes, correct routes, and a traffic director that understands the protocol.
 
@@ -474,7 +474,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** CloudFront, Global Accelerator, ALB, NLB, GWLB, PrivateLink, VPN, Direct Connect, CIDR, route table.
 
-## Task 3.5 — Determine high-performing data ingestion and transformation solutions
+### Task 3.5: Determine high-performing data ingestion and transformation solutions
 
 **ELI5:** Ingestion brings data in, transformation makes it usable, and analytics asks questions of it. Pick based on size, speed, frequency, and who needs the result.
 
@@ -521,9 +521,9 @@ RDS --> B[Backups / cross-Region copy]
 
 ---
 
-# Domain 4 — Design Cost-Optimized Architectures (20%)
+## Domain 4: Design Cost-Optimized Architectures (20%)
 
-## Task 4.1 — Design cost-optimized storage solutions
+### Task 4.1: Design cost-optimized storage solutions
 
 **ELI5:** Store data in the cheapest place that still retrieves it fast enough, protects it long enough, and supports the way it is used.
 
@@ -574,7 +574,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** lifecycle, Intelligent-Tiering, Glacier, Requester Pays, EBS SSD/HDD, EFS, FSx, tags, Cost Explorer, Budgets, CUR.
 
-## Task 4.2 — Design cost-optimized compute solutions
+### Task 4.2: Design cost-optimized compute solutions
 
 **ELI5:** Pay for compute only while it produces value. Use flexible capacity for flexible work and commitments only for steady demand you understand.
 
@@ -619,7 +619,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** Spot, On-Demand, Reserved Instances, Savings Plans, rightsize, Compute Optimizer, Auto Scaling, hibernation, Lambda, Fargate.
 
-## Task 4.3 — Design cost-optimized database solutions
+### Task 4.3: Design cost-optimized database solutions
 
 **ELI5:** The cheapest database is the one that fits the data model and demand without paying for unused capacity, unnecessary copies, or avoidable reads.
 
@@ -663,7 +663,7 @@ RDS --> B[Backups / cross-Region copy]
 >
 > **Exam Keywords:** Aurora Serverless, DynamoDB, RDS, ElastiCache, snapshots, retention, DMS, schema migration, columnar, time series.
 
-## Task 4.4 — Design cost-optimized network architectures
+### Task 4.4: Design cost-optimized network architectures
 
 **ELI5:** Network cost is often a toll problem: avoid unnecessary hops, avoid sending traffic through the public internet or NAT when a private AWS route fits, and cache repeat downloads at the edge.
 

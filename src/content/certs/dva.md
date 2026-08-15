@@ -31,7 +31,7 @@ flowchart LR
   Fn --> Obs[CloudWatch and X-Ray]
 ```
 
-## Domain 1: Development with AWS Services — 32%
+## Domain 1: Development with AWS Services (32%)
 
 ### Task 1: Develop code for applications hosted on AWS
 
@@ -136,7 +136,7 @@ flowchart TD
 - **Skill 1.3.8 — Data caching:** cache safe, frequently requested values with ElastiCache and define expiration/invalidation so stale data is acceptable.
 - **Skill 1.3.9 — Specialized data stores:** select OpenSearch Service for search-oriented access patterns, not as a substitute for a transactional primary database.
 
-## Domain 2: Security — 26%
+## Domain 2: Security (26%)
 
 ### Task 1: Implement authentication and/or authorization for applications and AWS services
 
@@ -216,7 +216,7 @@ flowchart TD
 - **Skill 2.3.5 — Application-level masking and sanitization:** show partial values such as the last four digits when users need confirmation but not the whole value.
 - **Skill 2.3.6 — Multi-tenant data access:** bind every access decision and query to a verified tenant context; use tenant-aware keys, conditions, and authorization checks.
 
-## Domain 3: Deployment — 24%
+## Domain 3: Deployment (24%)
 
 ### Task 1: Prepare application artifacts to be deployed to AWS
 
@@ -332,7 +332,7 @@ flowchart LR
 - **Skill 3.4.10 — Dynamic deployments from runtime configuration:** use existing runtime values, such as API Gateway stage variables consumed by Lambda, instead of rebuilding code per environment.
 - **Skill 3.4.11 — Blue/green, canary, rolling:** blue/green uses two environments; canary shifts a small initial slice; rolling replaces batches. Select based on risk, capacity, and traffic-control requirements.
 
-## Domain 4: Troubleshooting and Optimization — 18%
+## Domain 4: Troubleshooting and Optimization (18%)
 
 ### Task 1: Assist in a root cause analysis
 
