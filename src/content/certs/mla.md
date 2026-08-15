@@ -11,6 +11,8 @@ order: 5
 > **Based on the Official AWS Exam Guide (2026)**  
 > **Last updated:** July 2026
 
+> **Exam update notice — MLA-C01 is being retired.** AWS is updating this certification to **MLA-C02**. Registration for MLA-C02 opens **September 1, 2026**; the last day to take the English MLA-C01 exam is **September 28, 2026**. This MLA-C01 guide is retained temporarily for learners preparing before that date and will be replaced as updated MLA-C02 preparation material becomes available. Korean, Japanese, and Simplified Chinese MLA-C01 exams remain available until MLA-C02 reaches general availability.
+
 The **AWS Certified Machine Learning Engineer – Associate** certification validates the ability to build, operationalize, deploy, and maintain machine learning solutions and pipelines on AWS. It is an engineering-focused certification: concentrate on turning data and models into reliable, automated, observable, and secure ML workloads.
 
 ## Exam Overview
