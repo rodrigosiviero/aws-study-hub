@@ -424,6 +424,19 @@ aside nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px
 .markdown-body h2 { font-size: 1.5rem; margin-top: 2.75rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
 .markdown-body h3 { font-size: 1.2rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--teal-deep); }
 .markdown-body h4 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.6rem; color: var(--amber-deep); text-transform: uppercase; letter-spacing: 0.03em; font-size: 0.85rem; }
+.markdown-body h4[id^="skill-"] {
+  margin: 2.2rem 0 0.9rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid rgba(232, 93, 111, 0.28);
+  border-left: 4px solid var(--amber);
+  border-radius: 8px;
+  background: rgba(255, 153, 0, 0.07);
+  color: var(--navy);
+  font-size: 0.95rem;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
 
 .markdown-body p { margin: 0 0 1.1rem; color: var(--ink); }
 .markdown-body ul, .markdown-body ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
