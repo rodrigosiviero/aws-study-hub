@@ -117,24 +117,162 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.9, 1.1.10, 1.1.11, 1.1.12, 1.1.13.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 1.1.1** | Distinguish event-driven, microservices, monolithic, choreography, orchestration, and fanout; choreography lets consumers react, while Step Functions centrally coordinates required steps. |
-| **Skill 1.1.2** | Keep compute stateless by placing durable request or session state in a data store so any healthy instance can serve the next request. |
-| **Skill 1.1.3** | Explain that queues, events, and stable contracts reduce tight runtime dependency between components. |
-| **Skill 1.1.4** | Choose synchronous calls for immediate answers and asynchronous handoff for slow, bursty, or independently retryable work. |
-| **Skill 1.1.5** | Implement timeouts, idempotency, bounded retries, error handling, and durable recovery paths. |
-| **Skill 1.1.6** | Create and maintain APIs with transformations, validation, and deliberate HTTP status codes. |
-| **Skill 1.1.7** | Write and run focused unit tests, including AWS SAM local invocation where appropriate. |
-| **Skill 1.1.8** | Write code that uses messaging services for queues, topics, and event routing. |
-| **Skill 1.1.9** | Use AWS APIs and SDKs with temporary credentials, pagination, and exception handling. |
-| **Skill 1.1.10** | Handle streaming data with ordered records, checkpoints, batch processing, and duplicate-aware consumers. |
-| **Skill 1.1.11** | Use Amazon Q Developer to assist development, then review output, test it, and avoid exposing sensitive data. |
-| **Skill 1.1.12** | Use EventBridge event buses, rules, targets, schemas, archives, and replay where event routing is required. |
-| **Skill 1.1.13** | Implement third-party resilience with retry logic, circuit breakers, fallbacks, and explicit error paths. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 1.1.1 — Architecture patterns: monoliths, services, events, orchestration, and fanout
+**ELI5.** A monolith is one deployment where code calls code locally. Microservices are independently deployed services joined by network contracts. Event-driven choreography announces a fact such as `OrderCreated` and lets each consumer react; Step Functions orchestration is a durable conductor for required ordered steps. Fanout gives each interested consumer its own copy.
+
+**Choose deliberately.** Start with a monolith for one cohesive product and release cadence. Split only when independent ownership, scaling, or release schedules justify network complexity. Use choreography for independent reactions, Step Functions for ordered retries/compensation, SNS for simple pub/sub, EventBridge for rule-based event routing, and SQS for a durable worker buffer.
+
+**Architecture flow.** Persist an order, publish a versioned `OrderCreated`, and route it to Inventory, Email, and Analytics: that is choreography and fanout. If payment must happen before fulfillment, a state machine does charge → reserve → fulfill with `Catch` compensation. A single SQS queue has competing consumers; it does not fan out.
+
+**Failure and exam cue.** A synchronous API → payment → email chain fails order acceptance when email is slow. *Independent consumers* points to events/fanout; *ordered, stateful, compensating workflow* points to Step Functions. Do not call a state machine a notification bus.
+
+#### Skill 1.1.2 — Stateful and stateless application design
+**ELI5.** Stateless compute remembers nothing between requests, so any healthy Lambda can serve the next one. Important state can still exist: place carts, sessions, idempotency outcomes, and workflow progress in DynamoDB, a deliberate session store, or Step Functions where it survives retries and replacement.
+
+**Choose deliberately.** Keep handlers stateless when they must scale or be replaced transparently. Choose durable state when progress must survive a cold start, retry, or another instance.
+
+**Architecture flow.** The API writes `{idempotencyKey, result}` to DynamoDB, then returns that stored result on a duplicate. A Step Functions execution owns workflow state; Lambda reads input, updates durable state, and exits.
+
+**Failure and exam cue.** A cart held only in Lambda memory disappears on cold start or a concurrent instance. *Any instance can continue* means stateless compute plus durable state, not sticky sessions.
+
+#### Skill 1.1.3 — Coupling and stable service contracts
+**ELI5.** Tightly coupled parts must be available and agree at the same moment. Loosely coupled parts exchange a stable API or event contract, allowing a producer and consumer to deploy, scale, and recover independently.
+
+**Choose deliberately.** Use direct calls only when an immediate answer is required. Use SQS, SNS, or EventBridge for independently retryable work or separately owned consumers.
+
+**Architecture flow.** Publish an envelope with `source`, `detail-type`, version, correlation ID, and additive detail fields. Consumers validate supported versions and ignore unknown additive fields.
+
+**Failure and exam cue.** Reusing a field with a new meaning breaks old consumers. Queues reduce runtime dependency but do not eliminate the contract. One shared queue is not fanout when every consumer needs a copy.
+
+#### Skill 1.1.4 — Synchronous and asynchronous application flow
+**ELI5.** Synchronous work is a phone call: the caller waits. Asynchronous work is a tracked package: the producer makes a durable handoff and another worker completes it later.
+
+**Choose deliberately.** Keep validation, authorization, and an immediately required price synchronous. Hand off email, image processing, fulfillment, and bursty third-party work through SQS, SNS, or EventBridge.
+
+**Architecture flow.** API Gateway synchronously invokes Lambda to validate and save an order, then Lambda emits `OrderCreated`; an SQS-backed billing worker handles it later.
+
+**Failure and exam cue.** A queue is wrong if the caller requires the computed response now. A long synchronous dependency chain exhausts concurrency during an outage. Read *immediately* versus *durable/background*.
+
+#### Skill 1.1.5 — Retries, idempotency, and controlled recovery
+**ELI5.** A network can lose the reply after a card was charged. Idempotency makes a duplicate return the original outcome instead of repeating the side effect; retries give temporary faults a bounded second chance.
+
+**Choose deliberately.** Retry timeouts, throttles, and selected 5xx responses with exponential backoff and jitter. Never retry malformed input or authorization failures. Use an idempotency key before payments, orders, and at-least-once message processing.
+
+**Implementation flow.** Atomically record the idempotency key and result in DynamoDB before or with the side effect. On duplicate, return the result. After bounded transient retries, preserve asynchronous work in a DLQ/failure workflow with its correlation ID.
+
+**Failure and exam cue.** Retrying every error causes a storm; a DLQ is terminal handling, not the retry policy. *At-least-once delivery* requires an idempotent consumer.
+
+#### Skill 1.1.6 — API design, validation, and HTTP contracts
+**ELI5.** An API is an agreement about valid requests, responses, and status codes. Validation rejects malformed input before irreversible work; authorization still decides whether an authenticated caller may act.
+
+**Choose deliberately.** Use API Gateway for managed HTTP routing, validation, throttling, and integration. Keep tenant/ownership decisions in application code when they need domain context.
+
+**Implementation flow.** Define `POST /orders`, validate its JSON schema, derive tenant from a verified identity, then return `201` for creation, `400` for invalid input, `401/403` for identity/permission failures, and safe `5xx` errors for server faults. Carry a correlation ID into the event.
+
+**Failure and exam cue.** Returning `200` for every fault hides responsibility; trusting a tenant ID in the body permits cross-tenant reads. API Gateway validation complements handler validation.
+
+#### Skill 1.1.7 — Unit tests and AWS SAM local Lambda invocation
+**ELI5.** A unit test proves one decision without AWS; SAM local invocation runs the packaged handler with a realistic event. Use both: one makes logic fast to test, the other catches handler/event wiring before deployment.
+
+**Concrete code and test.** Separate business logic from the handler:
+```python
+# app.py
+def total(quantity, unit_price):
+    if quantity < 1: raise ValueError("quantity must be positive")
+    return quantity * unit_price
+
+def handler(event, _context):
+    try:
+        return {"statusCode": 200, "body": str(total(event["body"]["quantity"], event["body"]["unitPrice"]))}
+    except (KeyError, ValueError):
+        return {"statusCode": 400, "body": "invalid order"}
+```
+```python
+# test_app.py
+from app import handler, total
+def test_total_and_bad_request():
+    assert total(2, 7) == 14
+    assert handler({"body": {"quantity": 0, "unitPrice": 7}}, None)["statusCode"] == 400
+```
+Save a realistic payload as `events/order.json`, then run `sam local invoke OrderFunction --event events/order.json`. The fixture must be the actual API Gateway/SQS/EventBridge envelope, not an invented bare body.
+
+**Failure and exam cue.** Unit tests cannot prove IAM, VPC, or API Gateway mapping; deployed integration tests cover those. A happy-path local invoke is not release evidence—also test invalid input and duplicate delivery.
+
+#### Skill 1.1.8 — SQS, SNS, and EventBridge messaging in code
+**ELI5.** SQS is a durable to-do list for one worker group. SNS pushes a copy to every subscription. EventBridge accepts structured events and rules select matching targets.
+
+**Architecture flow.** The order API publishes `OrderCreated` to EventBridge; a rule sends billing work to SQS while analytics receives another target. Use SNS for simple push fanout, commonly with an SQS subscription when a consumer needs buffering.
+
+**Concrete implementation.** Use the execution role, not embedded keys:
+```python
+import boto3, json
+sqs, events = boto3.client("sqs"), boto3.client("events")
+events.put_events(Entries=[{"Source":"shop.orders", "DetailType":"OrderCreated", "Detail":json.dumps({"orderId":"o-42"}), "EventBusName":"shop"}])
+sqs.send_message(QueueUrl="https://sqs.region.amazonaws.com/account/billing", MessageBody=json.dumps({"orderId":"o-42"}))
+```
+For SNS, call `boto3.client("sns").publish(TopicArn=..., Message=..., MessageAttributes=...)`; subscription filter policies evaluate attributes. Put URLs/ARNs in configuration.
+
+**Failure and exam cue.** One SQS queue load-balances; it does not fan out. Set a visibility timeout longer than processing, a DLQ, and duplicate-safe consumers. *Content-based routing* points to EventBridge rules.
+
+#### Skill 1.1.9 — AWS SDK calls with temporary roles, pagination, and exceptions
+**ELI5.** The SDK is application code’s AWS control panel. The default credential provider obtains short-lived credentials from the Lambda/EC2 role. Pagination means one list response is often only the first page.
+
+**Choose deliberately.** Give an execution role only required actions/resources, use paginators for list APIs, and distinguish retryable throttling from access denied and invalid input.
+
+**Concrete implementation.**
+```python
+import boto3
+from botocore.exceptions import ClientError
+s3 = boto3.client("s3")
+try:
+    for page in s3.get_paginator("list_objects_v2").paginate(Bucket="approved-artifacts"):
+        for item in page.get("Contents", []): print(item["Key"])
+except ClientError as err:
+    if err.response["Error"]["Code"] == "AccessDenied": raise
+    raise
+```
+Configure region/resource names externally; inspect service error code and request ID.
+
+**Failure and exam cue.** One list call silently misses later pages. Catching every exception and returning success hides outages. *Temporary workload credentials* means role/default provider chain, not IAM user keys.
+
+#### Skill 1.1.10 — Kinesis streams, checkpoints, batches, and duplicate-safe consumers
+**ELI5.** Kinesis is an ordered, durable log divided into shards. A consumer reads batches and checkpoints progress, but a retry can replay records, so business effects must tolerate duplicates.
+
+**Choose deliberately.** Choose Kinesis for ordered near-real-time stream processing, replay, and multiple consumers. Choose SQS for a simple durable worker queue without stream retention semantics.
+
+**Architecture flow.** Producers choose a partition key so related order updates share a shard. A consumer records an event ID idempotently, writes output, then checkpoints after safe handling. Monitor iterator age for lag.
+
+**Failure and exam cue.** A failed batch can replay already successful records; never charge per delivery without idempotency. Ordering is within the shard/partition-key path, not globally.
+
+#### Skill 1.1.11 — Safe use of Amazon Q Developer
+**ELI5.** Amazon Q Developer can draft code, tests, and explanations, but it cannot approve its own output. Treat it like a fast new teammate whose pull request needs review.
+
+**Choose deliberately.** Ask it for a test matrix, SDK-error explanation, or IaC draft after defining constraints. Never paste secrets, tokens, customer data, or a production payload into prompts.
+
+**Implementation flow.** Ask for a test against a stated handler contract, review permissions/dependencies, run the test and `sam local invoke` using safe fixtures, and compare output to documentation and least-privilege needs.
+
+**Failure and exam cue.** Generated code can use broad permissions, static credentials, or a wrong event shape. Review and test it; “accept generated output without review” is never the safe answer.
+
+#### Skill 1.1.12 — EventBridge buses, rules, schemas, archives, and replay
+**ELI5.** A bus receives application facts; rules inspect event fields and deliver matching events. Schemas document shape, and archives retain events for a bounded replay after a consumer is repaired.
+
+**Choose deliberately.** Use a custom bus for application isolation, rules for content-based routing, archives/replay for historical reprocessing, and a queue DLQ for target delivery failure handling.
+
+**Architecture flow.** Put `OrderCreated` with `source: shop.orders` and a versioned detail on the `shop` bus. A rule matching source/region routes to fulfillment. Register the schema, archive the bus, then replay a time range to a repair target after fixing a consumer.
+
+**Failure and exam cue.** Replay re-delivers events, so consumers remain idempotent. A schema documents a contract; it is not authorization. *Rules, archive, replay* is EventBridge, not SNS or one SQS queue.
+
+#### Skill 1.1.13 — Resilience for third-party dependencies
+**ELI5.** A third-party API is outside your control. Short timeouts, bounded retries, circuit breaking, and durable handoff stop its outage from consuming every application request slot.
+
+**Choose deliberately.** Call synchronously only if the customer needs the answer now; otherwise queue work. Use a fallback only when it keeps the real business meaning, such as “payment pending,” never a fabricated “paid.”
+
+**Architecture flow.** A billing worker receives a durable message, calls the provider with connection/read timeouts and an idempotency key, retries transient errors with jitter, opens a circuit after repeated failures, and alarms on provider error rate.
+
+**Failure and exam cue.** Infinite retries amplify outages; retrying 4xx repeats bad requests. *Isolate external outage/graceful degradation/durable retry* is the resilience pattern.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 2: Develop code for AWS Lambda
 **Plain-language goal.** Configure event-driven functions so their networking, permissions, scaling, and failure behavior match the trigger.
@@ -185,18 +323,29 @@ flowchart TD
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.2.1, 1.2.2, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.7.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 1.2.1** | Describe Lambda access to private VPC resources through subnets, security groups, DNS, and routes. |
-| **Skill 1.2.2** | Configure environment variables, memory, concurrency, timeout, runtime, handler, layers, extensions, triggers, and destinations. |
-| **Skill 1.2.3** | Handle event lifecycle and errors with code, Lambda Destinations, dead-letter queues, and source-specific retry behavior. |
-| **Skill 1.2.4** | Write and run Lambda test code using AWS services and tools such as SAM. |
-| **Skill 1.2.5** | Integrate Lambda with API Gateway, S3, EventBridge, SQS, DynamoDB Streams, and other AWS services using least privilege. |
-| **Skill 1.2.6** | Tune Lambda by measuring duration, errors, throttles, memory use, initialization cost, and downstream limits. |
-| **Skill 1.2.7** | Use Lambda for near-real-time transformation, validation, enrichment, and routing of event or stream records. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 1.2.1 — Understanding Lambda access to private VPC resources through subnets, security groups, DNS, and routes
+**Mechanism.** Attach the Lambda to private subnets that can route to the database, allow the Lambda security group to reach the database security group on its port, and ensure VPC DNS can resolve the private endpoint. **Choose.** VPC attachment is for private-resource access; it is not required for ordinary public AWS API calls. **Action.** Test one database query from the deployed function and inspect subnet routes, security-group rules, and DNS if it fails. **Trap/exam clue.** A Lambda in a public subnet receives no public IP; a private-subnet function needs NAT plus a route for public internet egress.
+
+#### Skill 1.2.2 — Configuring environment variables, memory, concurrency, timeout, runtime, handler, layers, extensions, triggers, and destinations
+**Mechanism.** Lambda memory also allocates CPU; timeout caps one invocation; reserved concurrency caps or reserves concurrent executions; layers add shared runtime dependencies; destinations receive asynchronous outcomes. **Choose.** Put nonsecret names in environment variables and runtime flags in AppConfig; use Secrets Manager for rotating secrets. **Action.** Declare handler, runtime, memory, timeout, trigger, and destination in SAM/CloudFormation, then invoke a real trigger-shaped fixture. **Trap/exam clue.** Raising timeout does not cure CPU pressure or downstream overload, and provisioned concurrency is for initialization latency rather than a queue backlog.
+
+#### Skill 1.2.3 — Handling event lifecycle and errors with code, Lambda Destinations, dead-letter queues, and source-specific retry behavior
+**Mechanism.** API Gateway synchronous errors return to the caller; asynchronous Lambda invokes retry before an on-failure destination or DLQ; SQS/Kinesis/DynamoDB stream mappings own source retry and redelivery. **Choose.** Use Lambda Destinations when the receiver needs invocation metadata; use an SQS DLQ to isolate exhausted source records. **Action.** Make each record idempotent and return `batchItemFailures` for supported partial-batch processing. **Trap/exam clue.** A DLQ is where terminal failures land, not a substitute for configuring retries or a visibility timeout.
+
+#### Skill 1.2.4 — Testing Lambda test code using AWS services and tools such as SAM
+**Mechanism.** Unit-test business logic with fake dependencies, use `sam local invoke` with the actual API Gateway/SQS/EventBridge envelope, and run deployed integration tests for IAM and networking. **Choose.** SAM local catches handler/package/event-shape mistakes; it cannot prove a VPC route or resource policy. **Action.** Store a valid event and an invalid/duplicate event under `events/`, run both, and assert response plus durable state. **Trap/exam clue.** A bare JSON body is not an SQS `Records` event, so a happy-path local invoke is insufficient evidence.
+
+#### Skill 1.2.5 — Integrate Lambda with API Gateway, S3, EventBridge, SQS, DynamoDB Streams, and other AWS services using least privilege
+**Mechanism.** API Gateway invokes Lambda synchronously; S3 and EventBridge are asynchronous; SQS, DynamoDB Streams, and Kinesis use event source mappings that poll and batch. **Choose.** Match the trigger to the caller contract and grant the function only its needed action on the specific bucket, table, queue, or bus. **Action.** In IaC, add both the trigger permission/resource policy and the execution-role permission, then send a representative event. **Trap/exam clue.** Giving Lambda an IAM role does not automatically permit S3 or EventBridge to invoke it.
+
+#### Skill 1.2.6 — Tune Lambda by measuring duration, errors, throttles, memory use, initialization cost, and downstream limits
+**Mechanism.** Compare Duration, Errors, Throttles, ConcurrentExecutions, Max Memory Used, init duration, and downstream latency before changing a Lambda setting. **Choose.** Increase memory for measured CPU-bound work; cap reserved concurrency or buffer with SQS when a database/provider is the bottleneck. **Action.** Load-test two memory settings with the same payload and compare p95 duration and cost. **Trap/exam clue.** More provisioned concurrency reduces cold-start exposure but cannot make a slow SQL query fast.
+
+#### Skill 1.2.7 — Using Lambda for near-real-time transformation, validation, enrichment, and routing of event or stream records
+**Mechanism.** An event-source mapping batches stream or queue records into Lambda; the handler validates, enriches from an approved store, transforms, and routes only safe output. **Choose.** Use Lambda for short near-real-time per-record work; use a durable workflow or larger processing service when work exceeds Lambda’s event/runtime model. **Action.** Decode each record, attach an idempotency/event ID, return partial failures, and publish a versioned output event. **Trap/exam clue.** A failed batch can be replayed, so enrichment writes cannot assume exactly-once delivery.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 3: Use data stores in application development
 **Plain-language goal.** Choose a store and data model from the reads and writes the application must perform, then make cost and latency predictable.
@@ -247,20 +396,35 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.6, 1.3.7, 1.3.8, 1.3.9.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 1.3.1** | Describe high-cardinality partition keys and balanced partition access. |
-| **Skill 1.3.2** | Describe strongly consistent and eventually consistent database reads and their trade-offs. |
-| **Skill 1.3.3** | Describe Query versus Scan operations and their capacity implications. |
-| **Skill 1.3.4** | Define DynamoDB primary keys, sort keys, and secondary indexes from access patterns. |
-| **Skill 1.3.5** | Serialize and deserialize persistence data safely across application and schema changes. |
-| **Skill 1.3.6** | Use, manage, and maintain appropriate data stores with SDK operations, permissions, capacity, backups, and error handling. |
-| **Skill 1.3.7** | Manage data lifecycle with DynamoDB TTL, S3 lifecycle rules, and retention requirements. |
-| **Skill 1.3.8** | Use data caching services with safe keys, expiration, and invalidation. |
-| **Skill 1.3.9** | Choose specialized stores such as OpenSearch Service based on search access patterns. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 1.3.1 — Understanding high-cardinality partition keys and balanced partition access
+**Mechanism.** DynamoDB distributes a partition key’s items together, so a high-cardinality key such as `customerId` spreads load better than `status`. **Choose.** Design a key from the write/read access pattern; add deliberate write sharding only after a measured hot key. **Action.** Graph consumed capacity and throttles by key pattern, then test a synthetic burst against the candidate key. **Trap/exam clue.** More table capacity does not solve a single hot partition.
+
+#### Skill 1.3.2 — Understanding strongly consistent and eventually consistent database reads and their trade-offs
+**Mechanism.** A strongly consistent DynamoDB read returns the latest successful write from the table, while eventually consistent reads can briefly return an older replica value and cost less. **Choose.** Request strong consistency only for an explicit read-after-write requirement such as an account-state confirmation. **Action.** Set `ConsistentRead=True` on the required base-table GetItem/Query path and test immediately after a write. **Trap/exam clue.** GSIs do not provide strongly consistent reads, so an index cannot meet an immediate-latest-read requirement.
+
+#### Skill 1.3.3 — Understanding Query versus Scan operations and their capacity implications
+**Mechanism.** `Query` targets one partition key and can use a sort-key condition; `Scan` examines every item, and a filter removes results only after reads consume capacity. **Choose.** Query a primary key or GSI for application traffic; reserve Scan for deliberate administrative/bulk work. **Action.** Write the key condition first and examine `ConsumedCapacity` under realistic data volume. **Trap/exam clue.** A filter expression is not an index and does not make a Scan inexpensive.
+
+#### Skill 1.3.4 — Understanding DynamoDB primary keys, sort keys, and secondary indexes from access patterns
+**Mechanism.** A composite primary key groups related items by partition key and orders them by sort key; a GSI creates a separately queryable alternate key. **Choose.** Model each known access pattern before creating the table, using a GSI only when the application must query another partition dimension. **Action.** For seller history, use `sellerId` plus `updatedAt` and query a date range; project only required GSI fields. **Trap/exam clue.** You cannot query a GSI with the base table’s key unless that key is in the index design.
+
+#### Skill 1.3.5 — Serialize and deserialize persistence data safely across application and schema changes
+**Mechanism.** Persist explicit types and a schema/version attribute so newer code can accept missing legacy fields and readers do not reinterpret old data. **Choose.** Use backward-compatible additive changes before destructive renames; migrate only when a new reader cannot safely support both shapes. **Action.** Round-trip a current object and a saved old-version fixture through serializer/deserializer tests. **Trap/exam clue.** JSON-looking data can still lose numeric/type semantics if an SDK marshaller is used incorrectly.
+
+#### Skill 1.3.6 — Managing appropriate data stores with SDK operations, permissions, capacity, backups, and error handling
+**Mechanism.** Application SDK calls require scoped IAM, chosen capacity mode, error handling, backups/recovery, and metrics that match the store. **Choose.** Use on-demand capacity for unpredictable traffic and provisioned/autoscaled capacity when the workload is known; use managed backups/PITR instead of application-copy scripts. **Action.** Test an allowed operation, an intentional denied operation, and a throttled retry path. **Trap/exam clue.** Broad `dynamodb:*` permissions are not a fix for an access pattern or capacity problem.
+
+#### Skill 1.3.7 — Managing data lifecycle with DynamoDB TTL, S3 lifecycle rules, and retention requirements
+**Mechanism.** DynamoDB TTL marks items for asynchronous expiry from an epoch timestamp; S3 lifecycle rules transition or expire objects by age, prefix, or tag. **Choose.** Use TTL for temporary items such as carts and S3 lifecycle for object retention/cost tiering. **Action.** Store an application expiry timestamp too when an expired cart must disappear immediately, and test lifecycle rules on a nonproduction prefix. **Trap/exam clue.** TTL deletion is not immediate and is not a scheduling guarantee.
+
+#### Skill 1.3.8 — Using data caching services with safe keys, expiration, and invalidation
+**Mechanism.** Cache-aside reads a tenant-safe key, loads a miss from the authoritative store, writes a bounded-TTL cache entry, and invalidates/updates after a write. **Choose.** Cache repeated data that can be briefly stale; do not cache authorization-sensitive output without every response-varying dimension in the key. **Action.** Track hit rate, miss latency, and stale-read behavior while exercising write invalidation. **Trap/exam clue.** A cache improves latency but does not replace DynamoDB as the source of truth.
+
+#### Skill 1.3.9 — Choose specialized stores such as OpenSearch Service based on search access patterns
+**Mechanism.** OpenSearch indexes analyzed text for relevance, token matching, filters, and aggregations; DynamoDB is the system of record for predictable key access. **Choose.** Use OpenSearch for words/relevance/facets, not for a transactional GetItem lookup. **Action.** Replicate versioned product changes from the durable source to an index and tolerate index lag in the UI. **Trap/exam clue.** Search results can be stale or incomplete during indexing, so do not make the index the only transactional authority.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ## Domain 2: Security (26%)
 ### Task 1: Implement authentication and/or authorization for applications and AWS services
@@ -317,19 +481,32 @@ sequenceDiagram
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.5, 2.1.6, 2.1.7, 2.1.8.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 2.1.1** | Use identity providers such as Amazon Cognito and IAM federation for federated access. |
-| **Skill 2.1.2** | Secure applications with bearer-token validation and protected transport. |
-| **Skill 2.1.3** | Configure programmatic AWS access with credential providers and temporary credentials. |
-| **Skill 2.1.4** | Make authenticated AWS service calls with valid signed requests and scoped permissions. |
-| **Skill 2.1.5** | Assume IAM roles through STS using a matching trust policy and caller permission. |
-| **Skill 2.1.6** | Define least-privilege permissions for IAM principals with identity and resource policies. |
-| **Skill 2.1.7** | Implement fine-grained application authorization using claims, ownership, tenant context, and resource checks. |
-| **Skill 2.1.8** | Handle cross-service authentication in microservices through service identities and signed AWS calls. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 2.1.1 — Using identity providers such as Amazon Cognito and IAM federation for federated access
+**Mechanism.** Cognito user pools authenticate application users and issue JWTs; federation maps an external identity provider into an AWS-recognized identity flow. **Choose.** Use Cognito/federation for browser or mobile users and IAM roles for workloads calling AWS APIs. **Action.** Configure redirect/callback URLs and token validation, then test both a signed-in user and a denied unauthenticated request. **Trap/exam clue.** Creating IAM users for every app customer is not the scalable application-authentication design.
+
+#### Skill 2.1.2 — Secure applications with bearer-token validation and protected transport
+**Mechanism.** A bearer JWT must be validated for signature, issuer, audience, expiry, and relevant claims before the handler treats it as identity; HTTPS protects its transport. **Choose.** Use an API Gateway/Cognito authorizer for boundary validation and retain application authorization for tenant ownership decisions. **Action.** Reject an expired, wrong-audience, and missing token in integration tests. **Trap/exam clue.** Decoding a JWT without verifying its signature is not authentication, and TLS does not authorize the caller.
+
+#### Skill 2.1.3 — Configuring programmatic AWS access with credential providers and temporary credentials
+**Mechanism.** AWS SDK credential providers obtain temporary credentials from Lambda/EC2/ECS roles or STS and refresh them automatically. **Choose.** Use the default provider chain in workloads; use a profile only for local development, never hard-coded access keys in deployed code. **Action.** Remove explicit credential arguments, attach the narrow execution role, and test with `sts:GetCallerIdentity`. **Trap/exam clue.** Environment variables can carry temporary credentials locally but are not a reason to store long-lived IAM user keys.
+
+#### Skill 2.1.4 — Make authenticated AWS service calls with valid signed requests and scoped permissions
+**Mechanism.** AWS SDKs sign requests with SigV4 using the active role credentials, and IAM evaluates action, resource, and conditions. **Choose.** Use SDK/service integrations for AWS calls rather than inventing shared API secrets. **Action.** Scope a role to an exact S3 prefix or DynamoDB table and verify both permitted and forbidden calls. **Trap/exam clue.** A valid signature proves the caller identity; it does not bypass an explicit deny or missing resource permission.
+
+#### Skill 2.1.5 — Assume IAM roles through STS using a matching trust policy and caller permission
+**Mechanism.** `sts:AssumeRole` issues temporary credentials only when the caller policy permits assume-role and the target role trust policy trusts that caller. **Choose.** Use AssumeRole for cross-account delegation or a distinct privilege boundary, not copied credentials. **Action.** Set a specific principal/condition in the target trust policy, call STS, then use the returned session for the target action. **Trap/exam clue.** Adding only `sts:AssumeRole` to the caller cannot overcome a missing target trust relationship.
+
+#### Skill 2.1.6 — Understanding least-privilege permissions for IAM principals with identity and resource policies
+**Mechanism.** Identity policies grant a principal actions, while resource policies can grant or restrict access at S3, SQS, KMS, and similar resource boundaries; explicit deny wins. **Choose.** Grant the smallest action/resource/condition set and use a resource policy for cross-account/resource-side access. **Action.** Use IAM policy simulation or a denied integration test before broadening a statement. **Trap/exam clue.** `Action: *` or `Resource: *` is rarely least privilege and can conceal the missing condition the question tests.
+
+#### Skill 2.1.7 — Implementing fine-grained application authorization using claims, ownership, tenant context, and resource checks
+**Mechanism.** Authentication supplies claims; authorization maps those claims to an action and resource, such as requiring `tenantId` from the verified token to equal the item’s tenant partition. **Choose.** Enforce ownership/tenant rules in the backend even if the UI hides another tenant’s controls. **Action.** Derive the partition key from claims, reject a body/path tenant mismatch, and test cross-tenant access returns 403/empty by policy. **Trap/exam clue.** A valid JWT is not permission to read every record.
+
+#### Skill 2.1.8 — Handling cross-service authentication in microservices through service identities and signed AWS calls
+**Mechanism.** Each microservice calls AWS with its own execution/task role and signed request, leaving user JWTs for user context rather than workload credentials. **Choose.** Use service roles/SigV4 for AWS-to-AWS access; propagate only minimal user claims when downstream authorization truly needs them. **Action.** Give the producer permission to publish to its bus/queue and the consumer its own data permission, then test each boundary. **Trap/exam clue.** Passing a shared static secret between services defeats rotation and audit boundaries.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 2: Implement encryption by using AWS services
 **Plain-language goal.** Protect data in transit and at rest, then ensure the right principal can use the key or certificate without exposing key material.
@@ -370,18 +547,29 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.2.1, 2.2.2, 2.2.3, 2.2.4, 2.2.5, 2.2.6, 2.2.7.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 2.2.1** | Define encryption at rest and in transit as separate protections. |
-| **Skill 2.2.2** | Describe certificate issuance, trust, renewal, and private certificate management including AWS Private CA. |
-| **Skill 2.2.3** | Compare client-side encryption with server-side encryption. |
-| **Skill 2.2.4** | Use encryption keys to encrypt or decrypt data through AWS KMS APIs and permissions. |
-| **Skill 2.2.5** | Generate and manage certificates and SSH keys securely for development. |
-| **Skill 2.2.6** | Use encryption across account boundaries with KMS key policy and IAM permission design. |
-| **Skill 2.2.7** | Enable and disable key rotation according to the key and compliance requirement. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 2.2.1 — Understanding encryption at rest and in transit as separate protections
+**Mechanism.** TLS encrypts data while it moves over a connection; server-side/client-side encryption protects persisted bytes, with distinct controls and threats. **Choose.** Apply both when the requirement says protect uploads/downloads and stored objects. **Action.** Enforce HTTPS at the endpoint and set bucket/table encryption, then verify a non-TLS request is rejected where policy requires it. **Trap/exam clue.** SSE-KMS does not encrypt traffic, and a TLS certificate does not encrypt an object at rest.
+
+#### Skill 2.2.2 — Understanding certificate issuance, trust, renewal, and private certificate management including AWS Private CA
+**Mechanism.** A certificate binds a public key to a hostname/identity through a trusted issuer; clients validate hostname, validity period, and chain. AWS Private CA issues certificates trusted only by managed internal trust stores. **Choose.** Use ACM/public trust for public endpoints and Private CA for internal PKI/mTLS scenarios. **Action.** Automate renewal/deployment and test a client with the intended trust chain. **Trap/exam clue.** An SSH key pair is for administrative access, not a substitute for a TLS certificate.
+
+#### Skill 2.2.3 — Compare client-side encryption with server-side encryption
+**Mechanism.** Server-side encryption lets AWS service receive plaintext then encrypt it; client-side encryption encrypts before the service receives data and leaves key/material handling to the application. **Choose.** Prefer SSE-S3/SSE-KMS for managed service integration; choose client-side encryption when plaintext must not cross the cloud service boundary. **Action.** For SSE-KMS, set the key and test object read plus decrypt permissions. **Trap/exam clue.** Choosing client-side encryption adds key distribution/rotation complexity and is not required merely because data is sensitive.
+
+#### Skill 2.2.4 — Using encryption keys to encrypt or decrypt data through AWS KMS APIs and permissions
+**Mechanism.** KMS encrypt/decrypt APIs use keys without exposing key material; envelope encryption commonly encrypts data with a data key protected by a KMS key. **Choose.** Use service-integrated SSE-KMS for supported storage and direct KMS APIs/envelope encryption only when application-side control is needed. **Action.** Grant the role `kms:Decrypt`/`GenerateDataKey` as needed and include an encryption context consistently. **Trap/exam clue.** S3 permission and KMS permission are separate authorization checks.
+
+#### Skill 2.2.5 — Generate and manage certificates and SSH keys securely for development
+**Mechanism.** Certificates have issuers, private keys, renewal, and trust chains; SSH private keys authenticate administrative clients and must remain secret. **Choose.** Use managed ACM/Private CA where possible rather than hand-rotating endpoint certificates. **Action.** Store private material outside source control, limit file/access permissions, rotate on exposure, and test hostname/trust validation. **Trap/exam clue.** Base64-encoding a key or committing it in an encrypted-looking config file is not secure key management.
+
+#### Skill 2.2.6 — Using encryption across account boundaries with KMS key policy and IAM permission design
+**Mechanism.** Cross-account SSE-KMS access requires an S3/bucket permission path and KMS authorization via the key policy plus appropriate IAM permission for the external role. **Choose.** Grant the specific external role/account rather than making a key broadly usable. **Action.** Test `GetObject` and decrypt as the target role and inspect CloudTrail/KMS errors for the failed gate. **Trap/exam clue.** Bucket access alone produces AccessDenied when KMS decryption is not authorized.
+
+#### Skill 2.2.7 — Enable and disable key rotation according to the key and compliance requirement
+**Mechanism.** KMS rotation changes backing key material according to the key type/configuration while preserving the logical key identifier used by applications. **Choose.** Enable rotation when policy/compliance requires periodic material rotation; do not confuse it with deleting/recreating a key. **Action.** Document the key owner, rotation setting, grants/policies, and recovery plan, then verify the application still decrypts existing data. **Trap/exam clue.** Rotation does not grant a new principal access or repair a missing key policy.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 3: Manage sensitive data in application code
 **Plain-language goal.** Classify sensitive values, retrieve secrets at runtime, prevent disclosure, and enforce tenant boundaries in the backend.
@@ -414,17 +602,26 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.3.1, 2.3.2, 2.3.3, 2.3.4, 2.3.5, 2.3.6.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 2.3.1** | Describe classification including PII and PHI. |
-| **Skill 2.3.2** | Encrypt environment variables containing sensitive data and restrict their access. |
-| **Skill 2.3.3** | Use secret management services to secure sensitive data. |
-| **Skill 2.3.4** | Sanitize sensitive data before logs, errors, analytics, or external calls. |
-| **Skill 2.3.5** | Implement application-level masking and sanitization for least disclosure. |
-| **Skill 2.3.6** | Implement multi-tenant access patterns that bind authorization and data access to verified tenant context. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 2.3.1 — Understanding classification including PII and PHI
+**Mechanism.** PII identifies or can identify a person; PHI is health information tied to a person and carries stricter handling obligations in relevant systems. **Choose.** Classify before selecting logs, retention, access, and encryption controls. **Action.** Maintain a field inventory marking identifiers, health fields, secrets, and safe operational fields; test serializers/loggers against it. **Trap/exam clue.** A field can be sensitive even when it is not a password, so ‘not a secret’ does not mean safe to log.
+
+#### Skill 2.3.2 — Encrypt environment variables containing sensitive data and restrict their access
+**Mechanism.** Lambda environment variables are encrypted at rest with a KMS key, but principals able to read configuration or decrypt can still obtain values. **Choose.** Put rotating credentials in Secrets Manager; use encrypted environment variables for sensitive configuration that fits their lifecycle. **Action.** Restrict `lambda:GetFunctionConfiguration` and KMS decrypt, and confirm logs/error handling never echo variables. **Trap/exam clue.** Encryption at rest does not make a secret safe if broad console/API read permission remains.
+
+#### Skill 2.3.3 — Using secret management services to secure sensitive data
+**Mechanism.** Secrets Manager stores sensitive values, applies resource/KMS controls, and supports rotation workflows; the workload role retrieves the current version at runtime. **Choose.** Use it for database credentials/API tokens that rotate; use Parameter Store/AppConfig for ordinary nonsecret configuration where appropriate. **Action.** Call `GetSecretValue` through the role, cache with a rotation-aware TTL, and test refresh after rotation. **Trap/exam clue.** A secret copied into code or a deployment template is no longer managed securely.
+
+#### Skill 2.3.4 — Sanitize sensitive data before logs, errors, analytics, or external calls
+**Mechanism.** A logging boundary should emit an allowlist such as request ID, route, outcome, duration, and safe error class, while redacting tokens, passwords, and payload fields. **Choose.** Sanitize before the logger, analytics client, exception serializer, or external webhook—not after a sink already received the value. **Action.** Add a test that sends a token/identifier and asserts it does not appear in captured logs. **Trap/exam clue.** Debug logging is not exempt from privacy controls.
+
+#### Skill 2.3.5 — Implementing application-level masking and sanitization for least disclosure
+**Mechanism.** Masking shows a minimum useful portion to a legitimate viewer; sanitization removes/escapes dangerous or private content; authorization decides whether data may be read at all. **Choose.** Mask an insurance identifier in confirmation UI and omit it entirely from an operator log unless needed. **Action.** Centralize response/log formatting and test that full identifiers and tokens never leave the boundary. **Trap/exam clue.** Masking output cannot repair an unauthorized database query.
+
+#### Skill 2.3.6 — Implementing multi-tenant access patterns that bind authorization and data access to verified tenant context
+**Mechanism.** The service derives tenant context from validated claims and constrains data keys/conditions to that value, preventing a caller-chosen ID from crossing tenants. **Choose.** Use a tenant-prefixed partition key or policy condition aligned to the verified tenant; do not rely on separate frontend routes. **Action.** Replace body `tenantId` with token context and run a negative test requesting another tenant’s item. **Trap/exam clue.** UI filtering and client-provided tenant IDs are not authorization controls.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ## Domain 3: Deployment (24%)
 ### Task 1: Prepare application artifacts to be deployed to AWS
@@ -465,16 +662,23 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 3.1.1** | Manage code-module dependencies, environment references, configuration files, and container images inside the package boundary. |
-| **Skill 3.1.2** | Organize deployment files and directories so tools find handlers, templates, tests, and artifacts predictably. |
-| **Skill 3.1.3** | Use code repositories as versioned deployment inputs. |
-| **Skill 3.1.4** | Apply measured application resource requirements such as memory and cores. |
-| **Skill 3.1.5** | Prepare environment-specific configuration, including AWS AppConfig where runtime rollout control is needed. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 3.1.1 — Managing code-module dependencies, environment references, configuration files, and container images inside the package boundary
+**Mechanism.** A Lambda ZIP contains handler code and runtime-compatible dependencies; a layer supplies a shared compatible dependency bundle; an ECR image packages a container filesystem. **Choose.** Use ZIP for ordinary functions, layers for genuinely shared dependencies, and an image for native/large/container-based requirements. **Action.** Pin dependencies, build for the target architecture, and deploy an immutable tag/digest. **Trap/exam clue.** A layer is not automatically faster and a local native binary may fail in the Lambda runtime.
+
+#### Skill 3.1.2 — Organize deployment files and directories so tools find handlers, templates, tests, and artifacts predictably
+**Mechanism.** SAM/CloudFormation resolves `CodeUri`, handler paths, templates, and artifacts relative to declared project structure; test fixtures must match the code’s expected event shape. **Choose.** Keep source, tests, templates, and build output separate so packaging does not accidentally include stale artifacts or omit the handler. **Action.** Run `sam build` and inspect the built handler path before deployment. **Trap/exam clue.** ‘Handler not found’ usually means package layout and configured module/function do not match.
+
+#### Skill 3.1.3 — Using code repositories as versioned deployment inputs
+**Mechanism.** A repository commit/tag is an immutable-ish, reviewable deployment input that can start a pipeline and link a release to code. **Choose.** Trigger production from approved branches/tags and artifacts built from them, not a developer workstation. **Action.** Record commit SHA in the build/deployment metadata and require reviews/status checks on the release branch. **Trap/exam clue.** A floating branch tip alone is weaker release evidence than a specific commit/tag.
+
+#### Skill 3.1.4 — Applying measured application resource requirements such as memory and cores
+**Mechanism.** Runtime memory/CPU requirements come from measured peak memory, p95 duration, startup time, and CPU/I/O profile, not a guessed default. **Choose.** Raise Lambda memory when testing shows CPU-bound duration improves; choose container task CPU/memory reservations from observed usage. **Action.** Benchmark fixed representative load at two adjacent sizes and select the lowest setting meeting the SLO. **Trap/exam clue.** Increasing timeout only permits a slow function to run longer.
+
+#### Skill 3.1.5 — Prepare environment-specific configuration, including AWS AppConfig where runtime rollout control is needed
+**Mechanism.** One artifact promotes across environments while endpoint names, feature flags, and rollout rules remain external; AppConfig can validate and deploy runtime configuration progressively. **Choose.** Use environment variables/parameters for static environment references and AppConfig for safely rolled-out dynamic settings. **Action.** Give each environment a configuration profile, validate a schema, and test a bad configuration rollback. **Trap/exam clue.** Baking the production URL or a secret into the artifact prevents safe promotion.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 2: Test applications in development environments
 **Plain-language goal.** Test deployed integration boundaries in a safe environment, not only pure functions on a laptop.
@@ -506,16 +710,23 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.2.1, 3.2.2, 3.2.3, 3.2.4, 3.2.5.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 3.2.1** | Test deployed code with AWS services and tools. |
-| **Skill 3.2.2** | Write integration tests and mock APIs for external dependencies. |
-| **Skill 3.2.3** | Test applications with development endpoints such as API Gateway stages. |
-| **Skill 3.2.4** | Deploy application stack updates to existing staging/test environments using SAM or CloudFormation. |
-| **Skill 3.2.5** | Test event-driven applications through payload, routing, permissions, retries, and consumers. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 3.2.1 — Testing deployed code with AWS services and tools
+**Mechanism.** Deployed tests exercise real IAM, event mappings, resource policies, and VPC paths that unit tests cannot see. **Choose.** Keep pure logic tests fast locally, then run a narrow staging integration path against the packaged artifact. **Action.** Deploy a test stack, invoke its endpoint/event with a known ID, and assert response, persisted state, and logs. **Trap/exam clue.** A successful `sam build` or stack creation is not proof that an API integration works.
+
+#### Skill 3.2.2 — Writing integration tests and mock APIs for external dependencies
+**Mechanism.** A mock API makes third-party success, throttling, malformed response, and timeout behavior deterministic; an integration test verifies the client contract at that boundary. **Choose.** Mock external paid/nondeterministic systems while retaining selected AWS integrations in staging. **Action.** Point the staging endpoint to a mock URL and assert timeout/retry/idempotency behavior as well as success. **Trap/exam clue.** Mocking every dependency can hide IAM, mapping, and network misconfiguration.
+
+#### Skill 3.2.3 — Testing applications with development endpoints such as API Gateway stages
+**Mechanism.** API Gateway stages provide separate deployment/configuration boundaries and URLs, while custom domains/base-path mappings can preserve a stable client hostname. **Choose.** Use a development/staging stage for safe endpoint tests; do not aim test clients at production because code is shared. **Action.** Invoke the stage URL with test credentials and assert the response includes a safe environment/version marker. **Trap/exam clue.** Changing a Lambda alias alone does not create a distinct API stage or isolate stage variables.
+
+#### Skill 3.2.4 — Deploy application stack updates to existing staging/test environments using SAM or CloudFormation
+**Mechanism.** SAM transforms serverless shorthand into CloudFormation resources; CloudFormation updates an existing stack toward declared desired state. **Choose.** Update the staging stack with version-controlled IaC rather than clicking console changes or recreating it manually. **Action.** Review the change set/template diff, deploy parameters for test, then run a post-deploy smoke test. **Trap/exam clue.** A stack update can succeed while the application behavior or an integration permission remains wrong.
+
+#### Skill 3.2.5 — Testing event-driven applications through payload, routing, permissions, retries, and consumers
+**Mechanism.** Event-driven testing follows the full path: producer envelope, event pattern/subscription filter, target invocation permission, consumer result, retry, and DLQ/destination. **Choose.** Test a real routed event when the risk is wiring, not only a consumer unit test. **Action.** Publish a known event ID, verify one expected consumer result, then send an invalid event and verify retry/failure handling. **Trap/exam clue.** Producer `PutEvents` success does not prove a rule matched or a target accepted delivery.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 3: Automate deployment testing
 **Plain-language goal.** Make test events, environments, infrastructure, and approved versions reproducible so a pipeline proves the same release each time.
@@ -556,17 +767,26 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.3.1, 3.3.2, 3.3.3, 3.3.4, 3.3.5, 3.3.6.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 3.3.1** | Create application test events including JSON for Lambda, API Gateway, and SAM resources. |
-| **Skill 3.3.2** | Deploy API resources to various environments. |
-| **Skill 3.3.3** | Create integration environments using approved versions such as Lambda aliases, image tags, Amplify branches, or Copilot environments. |
-| **Skill 3.3.4** | Implement and deploy IaC templates with AWS SAM or CloudFormation. |
-| **Skill 3.3.5** | Manage service-specific development, test, and production environments. |
-| **Skill 3.3.6** | Use Amazon Q Developer to generate automated tests, then review and validate them. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 3.3.1 — Creating application test events including JSON for Lambda, API Gateway, and SAM resources
+**Mechanism.** Lambda, API Gateway, and SAM each expect a structured event envelope with headers/context/records that handler code must parse correctly. **Choose.** Save captured or documented representative fixtures rather than inventing a simplified body. **Action.** Version success, invalid, authorization-denied, and duplicate fixtures and run them in pipeline tests. **Trap/exam clue.** A test that omits `Records`, base64 payloads, or API request context cannot catch trigger-specific parsing defects.
+
+#### Skill 3.3.2 — Deploy API resources to various environments
+**Mechanism.** API deployments bind routes/integrations to a stage whose variables, authorizer, throttling, and endpoint are environment-specific. **Choose.** Promote the same API definition with environment parameters, keeping dev/test/prod dependencies separated. **Action.** Deploy to the intended stage, call its URL, and assert the route reaches the expected alias/backend. **Trap/exam clue.** Updating source without deploying the API/stage leaves clients on the old configuration.
+
+#### Skill 3.3.3 — Creating integration environments using approved versions such as Lambda aliases, image tags, Amplify branches, or Copilot environments
+**Mechanism.** A Lambda alias points to a published version, an image digest identifies exact container bits, and deployment branches/environments isolate test traffic/configuration. **Choose.** Use immutable approved identities for integration tests rather than `$LATEST` or `latest`. **Action.** Capture the alias version/image digest in test output and verify promotion reuses it. **Trap/exam clue.** Rebuilding in production can deploy different dependencies than the tested release.
+
+#### Skill 3.3.4 — Implementing and deploy IaC templates with AWS SAM or CloudFormation
+**Mechanism.** SAM/CloudFormation describe resources, dependencies, permissions, and configuration as reviewed desired state. **Choose.** Use IaC for repeatable stack updates; use a change set when impact review matters. **Action.** Parameterize environment names, validate/build the template, deploy an existing test stack, and assert a real behavior afterward. **Trap/exam clue.** Manual console fixes create drift and are not captured for the next environment.
+
+#### Skill 3.3.5 — Managing service-specific development, test, and production environments
+**Mechanism.** Each service has environment-scoped resources/configuration: separate API stages, Lambda aliases/variables, tables/buckets, queues/buses, and roles as needed. **Choose.** Isolate accounts or stacks according to risk, while sharing only deliberate artifacts and templates. **Action.** Add an environment tag/name to resources and test that staging cannot write to production data. **Trap/exam clue.** Same source code does not imply shared credentials, endpoints, or data are safe.
+
+#### Skill 3.3.6 — Using Amazon Q Developer to generate automated tests, then review and validate them
+**Mechanism.** Amazon Q Developer may draft test cases, but fixtures and assertions still need human validation against the actual handler contract and security policy. **Choose.** Use it to accelerate a test matrix or boilerplate, not to replace review of event shapes and expected outcomes. **Action.** Run generated tests, add a negative authorization/duplicate case, and inspect for static credentials or broad permissions. **Trap/exam clue.** Generated code is not evidence of correctness until it executes against controlled inputs.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 4: Deploy code by using AWS CI/CD services
 **Plain-language goal.** Promote a known release through source, build, test, deployment, health verification, and rollback with the existing workflow.
@@ -619,22 +839,41 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.4.1, 3.4.2, 3.4.3, 3.4.4, 3.4.5, 3.4.6, 3.4.7, 3.4.8, 3.4.9, 3.4.10, 3.4.11.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 3.4.1** | Describe Lambda ZIP archives, layers, and container-image deployment packages. |
-| **Skill 3.4.2** | Describe API Gateway stages and custom domains. |
-| **Skill 3.4.3** | Update existing SAM and CloudFormation templates. |
-| **Skill 3.4.4** | Manage application environments using AWS services. |
-| **Skill 3.4.5** | Deploy application versions with strategies that match risk and availability requirements. |
-| **Skill 3.4.6** | Commit code to repositories to invoke existing build, test, and deployment actions. |
-| **Skill 3.4.7** | Use orchestrated workflows to deploy code through environments. |
-| **Skill 3.4.8** | Perform rollbacks through existing deployment strategies and known-good versions. |
-| **Skill 3.4.9** | Use labels and branches for version and release management. |
-| **Skill 3.4.10** | Use runtime configuration for dynamic deployments, such as API Gateway stage variables consumed by Lambda. |
-| **Skill 3.4.11** | Configure blue/green, canary, and rolling strategies for releases. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 3.4.1 — Understanding Lambda ZIP archives, layers, and container-image deployment packages
+**Mechanism.** ZIP functions package code/dependencies, layers share compatible runtime libraries, and container-image functions pull a tagged/digested ECR image. **Choose.** Select the smallest package type meeting dependency/runtime needs; use a layer for shared libraries, not per-function configuration. **Action.** Build the exact package, run it in a Lambda-compatible test, and record ZIP hash or image digest. **Trap/exam clue.** `$LATEST`/an unpinned image is not a reproducible deployment artifact.
+
+#### Skill 3.4.2 — Understanding API Gateway stages and custom domains
+**Mechanism.** API Gateway stages expose deployments under distinct configuration contexts; a custom domain/base-path mapping gives clients a stable public name while routing to an API/stage. **Choose.** Use stages for dev/test/prod behavior and custom domains for client-facing URLs/certificates. **Action.** Map the intended base path, configure its certificate, and invoke each stage-specific endpoint in a test. **Trap/exam clue.** A custom domain does not by itself supply a separate deployment or environment.
+
+#### Skill 3.4.3 — Update existing SAM and CloudFormation templates
+**Mechanism.** Updating an existing SAM/CloudFormation template applies a reviewed diff to the stack and preserves declarative ownership of resources. **Choose.** Modify the template and deploy the stack; avoid manual resource edits that introduce drift. **Action.** Generate/review a change set, update test first, and inspect first-failed events on error. **Trap/exam clue.** Replacing a stack to make a small change risks data/resource replacement when an in-place update was required.
+
+#### Skill 3.4.4 — Managing application environments using AWS services
+**Mechanism.** Environment management combines separate resource names/accounts/stacks with external configuration, roles, and deployment controls. **Choose.** Isolate production data and credentials from development; promote the same artifact with environment-specific parameters. **Action.** Use IaC parameters/tags and least-privilege roles, then prove a staging request reaches only staging resources. **Trap/exam clue.** Copying production secrets into a dev environment is not environment management.
+
+#### Skill 3.4.5 — Deploy application versions with strategies that match risk and availability requirements
+**Mechanism.** Canary sends a small initial percentage, linear increases traffic in steps, blue/green switches to a replacement environment, and rolling replaces batches. **Choose.** Choose canary/linear for gradual exposure with alarms, blue/green for rapid environment switch with capacity, and rolling for incremental fleet replacement. **Action.** Attach user-impact alarms and preserve a known-good version before shifting traffic. **Trap/exam clue.** All-at-once deployment cannot meet a limited-blast-radius requirement.
+
+#### Skill 3.4.6 — Commit code to repositories to invoke existing build, test, and deployment actions
+**Mechanism.** A commit to an approved branch/tag can trigger existing CodePipeline source, CodeBuild test, and deployment actions. **Choose.** Let the established pipeline consume the repository revision rather than manually uploading local code. **Action.** Enforce branch protection/source filters, include buildspec in source, and record the source revision in the release. **Trap/exam clue.** Pushing to any branch is not sufficient when the pipeline is configured for a specific branch or tag.
+
+#### Skill 3.4.7 — Using orchestrated workflows to deploy code through environments
+**Mechanism.** CodePipeline coordinates source, build, test, approval, and deploy stages; CodeBuild executes build commands; CodeDeploy manages supported controlled deployments. **Choose.** Use orchestration when a release must pass ordered gates across environments, not a standalone build service. **Action.** Define artifact handoff, failure stop behavior, and post-deploy tests in the pipeline. **Trap/exam clue.** CodePipeline does not compile the application itself, and CodeBuild does not provide canary traffic shifting.
+
+#### Skill 3.4.8 — Perform rollbacks through existing deployment strategies and known-good versions
+**Mechanism.** Rollback returns traffic/configuration to a recorded known-good Lambda version, task set, or environment using the deployment strategy and health alarms. **Choose.** Use automated rollback for breached canary/linear alarms; use controlled manual rollback only when the deployment type requires it. **Action.** Record prior version and alarm state, trigger a controlled failure in staging, and verify traffic/logs identify the restored release. **Trap/exam clue.** Editing production source or console fields during an incident is not a reproducible rollback.
+
+#### Skill 3.4.9 — Using labels and branches for version and release management
+**Mechanism.** Branches organize ongoing work, tags/labels identify a release candidate, and immutable artifact metadata ties a deployment back to source. **Choose.** Trigger release pipelines from protected release branches or tags when the requirement calls for controlled promotion. **Action.** Tag the approved commit, build once, and persist SHA/tag/digest in the deployment record. **Trap/exam clue.** A mutable branch name does not guarantee that tomorrow’s build uses the reviewed revision.
+
+#### Skill 3.4.10 — Using runtime configuration for dynamic deployments, such as API Gateway stage variables consumed by Lambda
+**Mechanism.** Runtime configuration separates behavior from deployed code; API Gateway stage variables can select a Lambda alias or backend parameter at request time. **Choose.** Use stage variables/AppConfig for controlled environment/feature variation, not for secrets embedded in client-visible configuration. **Action.** Set a stage variable to an approved alias, invoke the stage, and log the safe selected version. **Trap/exam clue.** Changing a stage variable changes routing/configuration but does not publish new Lambda code.
+
+#### Skill 3.4.11 — Configuring blue/green, canary, and rolling strategies for releases
+**Mechanism.** Blue/green maintains old and replacement environments, canary shifts a small percentage before full rollout, and rolling updates batches of an existing fleet. **Choose.** Match the required rollback speed, spare capacity, and blast radius rather than selecting the fashionable strategy. **Action.** Configure CodeDeploy/SAM traffic shifting plus CloudWatch alarms and test an alarm-driven rollback. **Trap/exam clue.** Blue/green needs replacement capacity; canary needs a version/traffic routing mechanism.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ## Domain 4: Troubleshooting and Optimization (18%)
 ### Task 1: Assist in a root cause analysis
@@ -668,18 +907,29 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.1.1, 4.1.2, 4.1.3, 4.1.4, 4.1.5, 4.1.6, 4.1.7.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 4.1.1** | Debug code to identify reproducible defects. |
-| **Skill 4.1.2** | Interpret application metrics, logs, and traces together. |
-| **Skill 4.1.3** | Query logs to find relevant data efficiently. |
-| **Skill 4.1.4** | Implement custom metrics such as CloudWatch EMF. |
-| **Skill 4.1.5** | Review application health through dashboards and insights. |
-| **Skill 4.1.6** | Troubleshoot deployment failures from service output logs and first failed resources. |
-| **Skill 4.1.7** | Debug service integration issues across endpoint, identity, network, payload, timeout, and error handling. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 4.1.1 — Debugging code to identify reproducible defects
+**Mechanism.** Reproduce a defect with fixed input, version, environment, and time window, then reduce it to the smallest failing path before changing code. **Choose.** Start from evidence and a deterministic fixture, not a speculative rewrite. **Action.** Capture request/trace ID and release version, write a failing regression test, fix one cause, and rerun the same fixture. **Trap/exam clue.** A symptom that disappears after random configuration changes is not a demonstrated root cause.
+
+#### Skill 4.1.2 — Interpret application metrics, logs, and traces together
+**Mechanism.** Metrics reveal timing/scale, logs reveal event detail, and traces reveal the hop-by-hop request path; together they turn correlation into a testable hypothesis. **Choose.** Use metrics to bound the incident, trace a slow/failed request, then query logs by trace/request ID. **Action.** Compare baseline and degraded windows with version annotations and identify the first moving dependency. **Trap/exam clue.** An error-rate dashboard alone cannot locate a latency bottleneck.
+
+#### Skill 4.1.3 — Query logs to find relevant data efficiently
+**Mechanism.** CloudWatch Logs Insights filters and aggregates structured fields over a bounded time range, reducing cost/noise versus broad text search. **Choose.** Query by request ID, trace ID, route, version, and error class; use metrics/traces first when the failing scope is unknown. **Action.** Filter the incident window, project safe fields, sort by timestamp, and correlate a result to a trace. **Trap/exam clue.** Searching every log group for one vague exception can find unrelated historical failures.
+
+#### Skill 4.1.4 — Implementing custom metrics such as CloudWatch EMF
+**Mechanism.** Embedded Metric Format writes a JSON log event containing `_aws` metric metadata so CloudWatch extracts a metric without a separate PutMetricData call. **Choose.** Emit EMF for business signals such as `PaymentFailures` when Lambda Errors cannot explain user impact. **Action.** Use low-cardinality safe dimensions (for example route/environment), graph the result, and alarm on a tested threshold. **Trap/exam clue.** High-cardinality IDs as metric dimensions create excessive cost and unusable cardinality.
+
+#### Skill 4.1.5 — Reviewing application health through dashboards and insights
+**Mechanism.** A dashboard combines service and business metrics into a shared health view; Insights/queries let operators drill from a symptom to evidence. **Choose.** Use a dashboard for ongoing visibility and alarms/notifications for required action. **Action.** Place traffic, error rate, p95 latency, throttles, dependency metrics, and deployment annotations on one incident view. **Trap/exam clue.** A dashboard does not wake an on-call responder and is not an alerting mechanism by itself.
+
+#### Skill 4.1.6 — Troubleshoot deployment failures from service output logs and first failed resources
+**Mechanism.** CloudFormation/SAM failure investigation starts with the earliest failed resource event, then checks its service logs, permissions, quota, property, and dependency. **Choose.** Fix the root resource failure before chasing rollback/cascade events. **Action.** Read stack events in timestamp order, reproduce with the template/change set, and verify the stack plus application smoke test. **Trap/exam clue.** The final rollback message is often a consequence, not the original failure.
+
+#### Skill 4.1.7 — Debugging service integration issues across endpoint, identity, network, payload, timeout, and error handling
+**Mechanism.** Integration diagnosis separates endpoint/DNS/route reachability, identity/resource policy, payload contract, timeout budget, and downstream error handling. **Choose.** Test one layer at a time from caller to target instead of widening IAM immediately. **Action.** Correlate a request ID, verify endpoint resolution/connectivity, validate signed identity, then replay the exact payload. **Trap/exam clue.** A 403 indicates an authorization path; a timeout usually requires network/dependency/timeout analysis, not the same fix.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 2: Instrument code for observability
 **Plain-language goal.** Design safe logs, metrics, traces, health signals, and alerts before an incident so operators can explain unexpected behavior.
@@ -723,19 +973,32 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.2.1, 4.2.2, 4.2.3, 4.2.4, 4.2.5, 4.2.6, 4.2.7, 4.2.8.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 4.2.1** | Describe differences among logging, monitoring, and observability. |
-| **Skill 4.2.2** | Implement effective logs for application behavior and state. |
-| **Skill 4.2.3** | Emit custom application metrics. |
-| **Skill 4.2.4** | Add trace annotations for searchable safe dimensions. |
-| **Skill 4.2.5** | Implement notification alerts for actions such as quota risk or deployment completion. |
-| **Skill 4.2.6** | Implement tracing with AWS services and tools. |
-| **Skill 4.2.7** | Implement structured logging for application events and user actions. |
-| **Skill 4.2.8** | Configure health checks and readiness probes. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 4.2.1 — Understanding differences among logging, monitoring, and observability
+**Mechanism.** Logging records individual events, monitoring tracks known metrics/alarms, and observability connects logs, metrics, traces, and context to answer new questions. **Choose.** Emit all three forms for distributed flows: structured logs for details, metrics for trends, traces for paths. **Action.** Propagate one correlation ID and verify an operator can move from an alarm to the request trace and logs. **Trap/exam clue.** More raw log lines are not observability if they cannot be queried or correlated.
+
+#### Skill 4.2.2 — Implementing effective logs for application behavior and state
+**Mechanism.** Effective application logs use structured JSON with timestamp, level, request ID, operation, outcome, duration, version, and safe error class. **Choose.** Log state transitions and boundary failures, not entire request bodies or secrets. **Action.** Define an allowlist schema and test that a failed request emits searchable fields without tokens/PII. **Trap/exam clue.** Free-form strings and unbounded debug payloads make Logs Insights and incident privacy worse.
+
+#### Skill 4.2.3 — Emitting custom application metrics
+**Mechanism.** Custom metrics turn domain outcomes—orders accepted, validation failures, queue-age breach—into count, gauge, or latency time series for dashboards/alarms. **Choose.** Add custom metrics when infrastructure metrics cannot state the business symptom. **Action.** Emit a metric with low-cardinality dimensions, compare it to a known test event, and attach an actionable alarm. **Trap/exam clue.** Per-user/request-ID dimensions make metrics expensive and cannot replace logs for individual records.
+
+#### Skill 4.2.4 — Adding trace annotations for searchable safe dimensions
+**Mechanism.** X-Ray annotations are indexed key/value dimensions for filtering traces; metadata is nonindexed detail. **Choose.** Put safe, low-cardinality fields such as environment, route, or tenant tier in annotations; keep secrets and high-cardinality identifiers out. **Action.** Add an annotation around the dependency segment and query traces by it during a test incident. **Trap/exam clue.** An annotation is searchable observability data, not a secure store for customer identifiers.
+
+#### Skill 4.2.5 — Implementing notification alerts for actions such as quota risk or deployment completion
+**Mechanism.** CloudWatch alarms evaluate a metric over defined periods and can notify SNS or trigger a deployment rollback; quota alarms use service usage/limit signals. **Choose.** Alert only when a named owner can take a documented action; use a dashboard for passive information. **Action.** Set threshold/evaluation periods from baseline, test the alarm path, and include runbook/version context in notification. **Trap/exam clue.** Alerting on every transient error creates noise and does not meet an actionable-alert requirement.
+
+#### Skill 4.2.6 — Implementing tracing with AWS services and tools
+**Mechanism.** X-Ray tracing propagates trace context across supported services and records segments/subsegments with timing and errors for downstream calls. **Choose.** Use tracing to locate the slow hop in a distributed request; use logs for detailed values and metrics for fleet trend. **Action.** Enable active tracing, instrument an external/database call, and verify the service map shows the dependency. **Trap/exam clue.** A trace without propagated context fragments the request and cannot prove end-to-end latency.
+
+#### Skill 4.2.7 — Implementing structured logging for application events and user actions
+**Mechanism.** Structured logging emits typed JSON fields so an operator can filter `requestId`, `route`, `outcome`, `durationMs`, and deployment version without parsing prose. **Choose.** Standardize schema at the logger boundary and retain only safe user-action indicators. **Action.** Run a Logs Insights aggregation for failures by route/version and verify sensitive fields are absent. **Trap/exam clue.** Logging raw authorization headers or full user payloads turns observability into a data-disclosure risk.
+
+#### Skill 4.2.8 — Configuring health checks and readiness probes
+**Mechanism.** Liveness answers whether a process runs; readiness answers whether it can safely receive traffic because required dependencies/configuration are usable. **Choose.** Configure load balancer/container readiness checks when traffic must avoid instances that are starting or disconnected from a required dependency. **Action.** Make readiness fail during a controlled dependency outage while liveness stays healthy, then verify traffic is withheld. **Trap/exam clue.** Returning HTTP 200 from a process that cannot serve requests is liveness only, not readiness.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ### Task 3: Optimize applications by using AWS services and features
 **Plain-language goal.** Measure the bottleneck, choose the smallest relevant resource, caching, filtering, or code change, and verify the improvement.
@@ -775,20 +1038,35 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.3.1, 4.3.2, 4.3.3, 4.3.4, 4.3.5, 4.3.6, 4.3.7, 4.3.8, 4.3.9.
-#### Concept studio
-These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
-| Capability taught in this task | Concrete outcome to explain or implement |
-|---|---|
-| **Skill 4.3.1** | Define concurrency and its throughput/downstream implications. |
-| **Skill 4.3.2** | Profile application performance before changing resources. |
-| **Skill 4.3.3** | Determine minimum memory and compute power through measured tests. |
-| **Skill 4.3.4** | Use SNS subscription filter policies to optimize messaging. |
-| **Skill 4.3.5** | Cache content based on request headers when those headers vary the response. |
-| **Skill 4.3.6** | Implement application-level caching with safe keys and expiry/invalidation. |
-| **Skill 4.3.7** | Optimize resource usage through right-sizing, reuse, batching, and controlled concurrency. |
-| **Skill 4.3.8** | Analyze performance issues with baseline, evidence, and verified targeted changes. |
-| **Skill 4.3.9** | Use application logs to identify bottlenecks through correlated timings and outcomes. |
-**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+#### Skill 4.3.1 — Understanding concurrency and its throughput/downstream implications
+**Mechanism.** Concurrency is simultaneous work: Lambda executions, queue consumers, or container requests; it determines throughput and downstream pressure. **Choose.** Increase it only when the dependency capacity and account limits support it; cap reserved concurrency or buffer via SQS to protect a database/provider. **Action.** Load-test at a controlled concurrency and observe throttles, connection count, queue age, and p95 latency. **Trap/exam clue.** Higher concurrency can worsen an outage by overwhelming the already slow downstream service.
+
+#### Skill 4.3.2 — Profile application performance before changing resources
+**Mechanism.** A profile combines p50/p95 duration, init time, CPU/memory, query count, dependency segments, cache hit rate, throttles, and cost before a change. **Choose.** Optimize the measured dominant component, not the most familiar AWS setting. **Action.** Capture a baseline, change one variable, rerun the same load, and compare evidence. **Trap/exam clue.** Increasing Lambda memory cannot fix a third-party call that owns most of the trace time.
+
+#### Skill 4.3.3 — Choosing minimum memory and compute power through measured tests
+**Mechanism.** Lambda memory selection changes memory and CPU, so the right value is the lowest measured setting that meets latency/reliability objectives at representative load. **Choose.** Test adjacent sizes for CPU-bound code; investigate network/database time before increasing memory for I/O-bound work. **Action.** Record duration, Max Memory Used, throttles, and estimated cost for each run. **Trap/exam clue.** Selecting the largest memory value without measurement can increase cost with no user benefit.
+
+#### Skill 4.3.4 — Using SNS subscription filter policies to optimize messaging
+**Mechanism.** SNS subscription filter policies evaluate message attributes or body scope before delivery, so irrelevant subscribers do not receive/process the message. **Choose.** Use a filter policy when one topic has consumers interested in different event types/regions; use EventBridge when rule-based event routing is the central requirement. **Action.** Publish messages with explicit attributes and test matching and nonmatching deliveries. **Trap/exam clue.** Filtering inside every Lambda after delivery still consumes invocation and downstream work.
+
+#### Skill 4.3.5 — Cache content based on request headers when those headers vary the response
+**Mechanism.** An HTTP cache key must include each header, cookie, query parameter, or identity dimension that changes the response, such as `Accept-Language` or tenant. **Choose.** Forward/include only required variant headers to preserve cache hit rate; do not share-cache personalized content unless the key is safe. **Action.** Request two language/tenant variants and confirm neither receives the other’s cached response. **Trap/exam clue.** A product-only key for tenant pricing risks cross-tenant data exposure.
+
+#### Skill 4.3.6 — Implementing application-level caching with safe keys and expiry/invalidation
+**Mechanism.** Application cache-aside uses a complete key, bounded TTL, authoritative-store miss path, and write invalidation/update policy. **Choose.** Cache repeated, safely stale reads in ElastiCache/DAX/application memory according to sharing and durability needs. **Action.** Test cold miss, hit, write invalidation, and expired entry behavior while monitoring hit rate and stale reads. **Trap/exam clue.** An in-process Lambda cache disappears on cold start and cannot be treated as shared durable state.
+
+#### Skill 4.3.7 — Optimize resource usage through right-sizing, reuse, batching, and controlled concurrency
+**Mechanism.** Right-sizing removes unused capacity, connection/client reuse avoids setup cost, batching balances throughput against retry blast radius, and concurrency caps protect downstream systems. **Choose.** Apply the smallest control identified by profile evidence: reuse SDK/database connections, tune batch size, or queue/cap work. **Action.** Change one lever and compare latency, errors, throttles, and cost under identical load. **Trap/exam clue.** Larger batches can replay more successful records when one record fails.
+
+#### Skill 4.3.8 — Analyzing performance issues with baseline, evidence, and verified targeted changes
+**Mechanism.** Performance analysis starts with a baseline and a hypothesis tied to metrics, logs, and traces, then validates one targeted change against the same workload. **Choose.** Fix the measured slow dependency, hot partition, cache miss pattern, or CPU limit rather than applying blanket scaling. **Action.** Record before/after p95, errors, throughput, cost, and the changed version/configuration. **Trap/exam clue.** A lower average duration can hide worse tail latency or error rate, so compare the relevant SLO evidence.
+
+#### Skill 4.3.9 — Using application logs to identify bottlenecks through correlated timings and outcomes
+**Mechanism.** Correlated structured logs expose per-step timestamps/durations, request ID, version, and safe outcome; joining them to trace IDs isolates a bottleneck. **Choose.** Use logs to explain the slow request after metrics identify the affected interval and traces identify the likely hop. **Action.** Query a bounded window, calculate/inspect dependency timings, and compare a slow request to a healthy one. **Trap/exam clue.** An uncorrelated stack trace tells you an error happened but rarely identifies where total latency accumulated.
+
+**Checkpoint.** Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. Explain the request path out loud: what starts the work, where durable state lives, which identity acts, how a failure is retried or surfaced, and what signal proves success. If any answer is vague, return to the decision table.
+
 ---
 ## Appendix A: Service-selection decision tree
 
