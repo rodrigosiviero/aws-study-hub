@@ -53,6 +53,42 @@ flowchart LR
  P -->|timeout or 5xx| R[Backoff / circuit breaker]
  R --> DLQ[Failure queue]
 ```
+#### Architecture concept studio
+**Monolith.** One deployable application contains the order API, inventory logic, and billing logic. It is often the lowest-operational-overhead answer for a small, cohesive product and one release cadence. It becomes limiting only when components need independent ownership, scaling, or release schedules.
+
+**Microservices.** Separate Orders, Inventory, and Billing services can deploy and scale independently, but every boundary now needs a network contract, authentication, observability, and failure handling. “Microservices” is not an automatic best practice; it is a trade for independent change.
+
+**Event-driven architecture and choreography.** After the API persists an order, it publishes the fact `OrderCreated`. Inventory and Email react independently. This is choreography: no central coordinator tells them to run. It is ideal when a new consumer can be added without changing order acceptance.
+
+**Orchestration with Step Functions.** When the business rule is *charge payment, then reserve inventory, then ship; otherwise compensate*, use a Step Functions state machine. It keeps durable workflow state, makes order/retry/catch behavior visible, and can invoke compensating work. Do not choose it merely to broadcast a notification.
+
+**Pub/sub fanout.** SNS gives each subscription a copy of a message; EventBridge routes structured events to matching targets. One SQS queue instead load-balances each message to one worker. Attach SQS queues to fanout consumers that need buffering and independent retries.
+
+| Comparison | State and coupling | Choose it when | Exam trap |
+|---|---|---|---|
+| Monolith | One deployment; in-process calls | One small cohesive application | Treating it as inherently obsolete |
+| Microservices | Network contracts; separate deployment | Independent teams or scaling justify complexity | Ignoring service-to-service failures |
+| Choreography | Event contracts; no central workflow state | Reactions are independent | Using it for strictly ordered steps |
+| Step Functions orchestration | Central durable state machine | Ordered, retryable, compensating workflow | Calling it pub/sub |
+| SNS/EventBridge fanout | Independent copies/targets | Many consumers need the same fact | Using one SQS queue for copies |
+
+```mermaid
+flowchart LR
+ O[Order API] --> DB[(Order + idempotency record)]
+ DB --> EV[OrderCreated]
+ EV --> INV[Inventory reacts]
+ EV --> MAIL[Email reacts]
+ EV --> SF[Step Functions: payment then fulfillment]
+ SF --> PAY[Payment]
+ SF --> FUL[Fulfillment]
+```
+
+**Stateful versus stateless.** Keep compute **stateless**: do not put a cart, session, or workflow solely in Lambda/container memory. Persist it in DynamoDB, a session store, or Step Functions so any healthy instance can continue. A **stateful** workflow is valid when its durable state is deliberately owned and recoverable.
+
+**Tightly versus loosely coupled; synchronous versus asynchronous.** An API → payment → email chain is tightly coupled and synchronous: the caller waits and every slow dependency can fail acceptance. A durable event/queue makes producer and consumer loosely coupled and asynchronous: the API can accept the order and consumers retry independently. Keep synchronous work only where the caller must know now, such as validation or a price; hand off slow/bursty work asynchronously.
+
+**Idempotency and retries.** At-least-once delivery means duplicate requests/messages are expected. Store an idempotency key and prior business result before charging or writing. Retry transient timeout/5xx failures with a short timeout, bounded exponential backoff, and jitter; never retry malformed input. After attempts are exhausted, preserve work in a DLQ or failure workflow.
+
 #### Decision table
 | Requirement cue | Select | Reason |
 |---|---|---|
@@ -81,9 +117,9 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.5, 1.1.6, 1.1.7, 1.1.8, 1.1.9, 1.1.10, 1.1.11, 1.1.12, 1.1.13.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 1.1.1** | Distinguish event-driven, microservices, monolithic, choreography, orchestration, and fanout; choreography lets consumers react, while Step Functions centrally coordinates required steps. |
 | **Skill 1.1.2** | Keep compute stateless by placing durable request or session state in a data store so any healthy instance can serve the next request. |
@@ -149,9 +185,9 @@ flowchart TD
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.2.1, 1.2.2, 1.2.3, 1.2.4, 1.2.5, 1.2.6, 1.2.7.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 1.2.1** | Describe Lambda access to private VPC resources through subnets, security groups, DNS, and routes. |
 | **Skill 1.2.2** | Configure environment variables, memory, concurrency, timeout, runtime, handler, layers, extensions, triggers, and destinations. |
@@ -211,9 +247,9 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 1.3.1, 1.3.2, 1.3.3, 1.3.4, 1.3.5, 1.3.6, 1.3.7, 1.3.8, 1.3.9.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 1.3.1** | Describe high-cardinality partition keys and balanced partition access. |
 | **Skill 1.3.2** | Describe strongly consistent and eventually consistent database reads and their trade-offs. |
@@ -281,9 +317,9 @@ sequenceDiagram
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.1.1, 2.1.2, 2.1.3, 2.1.4, 2.1.5, 2.1.6, 2.1.7, 2.1.8.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 2.1.1** | Use identity providers such as Amazon Cognito and IAM federation for federated access. |
 | **Skill 2.1.2** | Secure applications with bearer-token validation and protected transport. |
@@ -299,6 +335,14 @@ The following official skills are preserved. Treat them as capabilities inside t
 **Plain-language goal.** Protect data in transit and at rest, then ensure the right principal can use the key or certificate without exposing key material.
 A strong answer begins by separating the business requirement from the AWS component. Name the required behavior first—durable handoff, verified identity, repeatable artifact, or evidence for an incident—then choose the managed feature that supplies it. The service name is the last step, not the first.
 **End-to-end scenario.** A document API accepts HTTPS uploads, stores objects with SSE-KMS, and lets a compliance role in another AWS account decrypt approved files. Internal services use private certificates for mutual trust.
+
+```mermaid
+flowchart LR
+ C[Client over TLS] --> S3[S3 object encrypted with SSE-KMS]
+ R[Compliance role in Account B] -->|s3:GetObject| S3
+ R -->|kms:Decrypt: IAM + key policy| K[KMS key in Account A]
+ I[Internal service] --> PCA[Private CA certificate]
+```
 #### Decision table
 | Requirement | Choose | Why |
 |---|---|---|
@@ -326,9 +370,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.2.1, 2.2.2, 2.2.3, 2.2.4, 2.2.5, 2.2.6, 2.2.7.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 2.2.1** | Define encryption at rest and in transit as separate protections. |
 | **Skill 2.2.2** | Describe certificate issuance, trust, renewal, and private certificate management including AWS Private CA. |
@@ -370,9 +414,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 2.3.1, 2.3.2, 2.3.3, 2.3.4, 2.3.5, 2.3.6.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 2.3.1** | Describe classification including PII and PHI. |
 | **Skill 2.3.2** | Encrypt environment variables containing sensitive data and restrict their access. |
@@ -421,9 +465,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.1.1, 3.1.2, 3.1.3, 3.1.4, 3.1.5.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 3.1.1** | Manage code-module dependencies, environment references, configuration files, and container images inside the package boundary. |
 | **Skill 3.1.2** | Organize deployment files and directories so tools find handlers, templates, tests, and artifacts predictably. |
@@ -462,9 +506,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.2.1, 3.2.2, 3.2.3, 3.2.4, 3.2.5.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 3.2.1** | Test deployed code with AWS services and tools. |
 | **Skill 3.2.2** | Write integration tests and mock APIs for external dependencies. |
@@ -512,9 +556,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.3.1, 3.3.2, 3.3.3, 3.3.4, 3.3.5, 3.3.6.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 3.3.1** | Create application test events including JSON for Lambda, API Gateway, and SAM resources. |
 | **Skill 3.3.2** | Deploy API resources to various environments. |
@@ -575,9 +619,9 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 3.4.1, 3.4.2, 3.4.3, 3.4.4, 3.4.5, 3.4.6, 3.4.7, 3.4.8, 3.4.9, 3.4.10, 3.4.11.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 3.4.1** | Describe Lambda ZIP archives, layers, and container-image deployment packages. |
 | **Skill 3.4.2** | Describe API Gateway stages and custom domains. |
@@ -624,9 +668,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.1.1, 4.1.2, 4.1.3, 4.1.4, 4.1.5, 4.1.6, 4.1.7.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 4.1.1** | Debug code to identify reproducible defects. |
 | **Skill 4.1.2** | Interpret application metrics, logs, and traces together. |
@@ -679,9 +723,9 @@ flowchart LR
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.2.1, 4.2.2, 4.2.3, 4.2.4, 4.2.5, 4.2.6, 4.2.7, 4.2.8.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 4.2.1** | Describe differences among logging, monitoring, and observability. |
 | **Skill 4.2.2** | Implement effective logs for application behavior and state. |
@@ -731,9 +775,9 @@ A strong answer begins by separating the business requirement from the AWS compo
 > **Exam Tip:** Read qualifiers such as *independently*, *least operational overhead*, *private*, *automatic rollback*, and *near real time*. They eliminate otherwise valid services.
 > **Trap:** Do not solve a requirement that was not stated. A sophisticated design with extra services is often wrong when a native managed feature answers the exact constraint.
 **Keywords:** 4.3.1, 4.3.2, 4.3.3, 4.3.4, 4.3.5, 4.3.6, 4.3.7, 4.3.8, 4.3.9.
-#### Official blueprint coverage, taught in context
-The following official skills are preserved. Treat them as capabilities inside the scenario above, rather than a memorization list.
-| Official skill | What you must be able to explain or implement |
+#### Concept studio
+These skills are not a separate inventory: use the scenario, decision table, mechanics, failure path, and distractors immediately above to make each capability concrete. Read each row as the build-and-explain target for this task.
+| Capability taught in this task | Concrete outcome to explain or implement |
 |---|---|
 | **Skill 4.3.1** | Define concurrency and its throughput/downstream implications. |
 | **Skill 4.3.2** | Profile application performance before changing resources. |

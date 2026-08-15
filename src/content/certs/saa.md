@@ -1422,7 +1422,7 @@ flowchart LR
 
 ---
 
-# Fast comparison sheet
+## Fast comparison sheet
 
 | If the requirement says... | Start with... | Do not confuse with... |
 |---|---|---|
@@ -1441,34 +1441,34 @@ flowchart LR
 | File transfer | DataSync | Kinesis stream ingestion |
 | Variable serverless key-value | DynamoDB | Aurora relational database |
 
-# Active recall scenarios
+## Active recall scenarios
 
-## 1. Cross-account reports
+### 1. Cross-account reports
 A finance role in a central account needs to read only monthly reports in an S3 bucket in every business account. Employees already authenticate through a corporate directory. What identity design minimizes permanent credentials?
 
 <details><summary>Answer</summary>Federate employees through IAM Identity Center or the corporate identity provider, then let the finance role assume cross-account roles or use narrowly scoped bucket/resource policies as appropriate. Use short-lived STS credentials; do not create shared IAM users or cross-account access keys.</details>
 
-## 2. Burst-proof image pipeline
+### 2. Burst-proof image pipeline
 Uploads arrive in bursts, processing can take several minutes, and users only need an acknowledgement immediately. What architecture protects the upload API and lets processing scale independently?
 
 <details><summary>Answer</summary>Put the job on SQS (or an event pattern that delivers to a queue), return an acknowledgement, and scale workers on queue depth. Lambda, ECS/Fargate, or Batch depends on runtime and processing requirements. A synchronous API-to-worker call would couple the upload rate to worker availability.</details>
 
-## 3. Low RPO, moderate RTO
+### 3. Low RPO, moderate RTO
 A regional outage is acceptable only if data loss is very small and recovery takes minutes, not hours. Which DR thinking applies?
 
 <details><summary>Answer</summary>Compare warm standby or active-active against the stated RPO/RTO. Backup and restore is usually cheaper but slower; pilot light keeps core components ready but still needs scale-up. The right answer must name the strategy that meets both recovery measures, not just “take backups.”</details>
 
-## 4. Private S3 traffic bill
+### 4. Private S3 traffic bill
 Private EC2 instances use a NAT gateway solely to reach S3, and NAT processing charges are growing. What should change?
 
 <details><summary>Answer</summary>Add an S3 gateway VPC endpoint and route S3 traffic through it. This keeps supported traffic private and avoids the NAT path for that access. Do not make the instances public merely to avoid NAT cost.</details>
 
-## 5. Read-heavy product catalog
+### 5. Read-heavy product catalog
 A relational product catalog has read latency spikes but writes are modest. Which two levers should you evaluate first?
 
 <details><summary>Answer</summary>Evaluate ElastiCache for repeated hot reads and read replicas for relational read scale. Multi-AZ improves availability rather than read throughput. The final choice depends on cacheability, consistency, and query pattern.</details>
 
-# Final checklist
+## Final checklist
 
 - Can you explain why an IAM role is safer than an application access key?
 - Can you draw public, private application, and private database subnet traffic paths?
@@ -1481,7 +1481,7 @@ A relational product catalog has read latency spikes but writes are modest. Whic
 
 ---
 
-# Appendix A: Architecture keyword decision tree
+## Appendix A: Architecture keyword decision tree
 
 ```mermaid
 flowchart TD
@@ -1516,9 +1516,9 @@ flowchart TD
 | unknown object access pattern | Can the storage tier move automatically? | S3 Intelligent-Tiering | Retrieval/monitoring charges and minimum duration |
 | predictable baseline / interruptible batch | What commitment and interruption risk are allowed? | Savings Plans, Spot, ASG | Checkpointing, fallback capacity, utilization |
 
-# Appendix B: Comparison tables for exam decisions
+## Appendix B: Comparison tables for exam decisions
 
-## Identity and perimeter controls
+### Identity and perimeter controls
 
 | Option | Principal / layer | Best use | Key configuration | Do not confuse with |
 |---|---|---|---|---|
@@ -1536,7 +1536,7 @@ flowchart TD
 | AWS WAF | HTTP(S) Layer 7 | N/A | SQLi, XSS, bot/rate controls | Does not replace Shield DDoS service |
 | AWS Shield | DDoS protection | N/A | Baseline DDoS protection / advanced support | Does not write web request rules |
 
-## Storage and integration
+### Storage and integration
 
 | Service | Data model | Best use | Knobs that matter | Alternative when |
 |---|---|---|---|---|
@@ -1552,7 +1552,7 @@ flowchart TD
 | EventBridge | Event bus | Route events by content across targets/accounts | rules, event pattern, archive | Not a work queue substitute |
 | Step Functions | Stateful workflow | Ordered steps, choices, retries, compensation | Retry/Catch, Standard/Express, Map | Not necessary for one independent job |
 
-## Databases and recovery
+### Databases and recovery
 
 | Feature | Primary purpose | Replication behavior | Reads | Exam phrase |
 |---|---|---|---|---|
@@ -1568,7 +1568,7 @@ flowchart TD
 | Warm standby | Reduced but functional stack | Minutes | Low | Pay for running secondary baseline |
 | Active-active | Full multiple Regions | Seconds to minutes | Very low | Highest complexity, routing and conflict design |
 
-## Compute, network, and cost
+### Compute, network, and cost
 
 | Option | Best fit | Scaling / operational model | Beware |
 |---|---|---|---|
@@ -1600,7 +1600,7 @@ flowchart TD
 | Gateway endpoint | Private S3/DynamoDB traffic | Configure routes/policy; not generic egress |
 | NAT per AZ | Resilient private egress is required | Higher fixed cost; keep traffic local to AZ |
 
-# Appendix C: Critical rules and numbers
+## Appendix C: Critical rules and numbers
 
 | Rule or number | Why it matters on SAA-C03 |
 |---|---|
@@ -1625,7 +1625,7 @@ flowchart TD
 | RPO | Maximum acceptable data loss measured in time. |
 | RTO | Maximum acceptable recovery time. |
 
-# Appendix D: 30 exam traps and keyword pairs
+## Appendix D: 30 exam traps and keyword pairs
 
 1. **IAM role** means temporary credentials; **IAM user access key** is not the default workload answer.
 2. **SCP** limits maximum permissions; it does not grant an allow.
@@ -1658,9 +1658,9 @@ flowchart TD
 29. **Single NAT gateway** can reduce line-item cost; per-AZ NAT reduces AZ dependency and cross-AZ transfer.
 30. **Most cost-effective** still means meeting the stated availability, security, and performance requirements.
 
-# Appendix E: Original scenario questions with hidden rationales
+## Appendix E: Original scenario questions with hidden rationales
 
-## Question 1: Central engineering access
+### Question 1: Central engineering access
 
 A company has 30 AWS accounts. Engineers authenticate with a corporate identity provider, and production access must be temporary, auditable, and centrally administered. Which design requires the least credential management?
 
@@ -1671,7 +1671,7 @@ A company has 30 AWS accounts. Engineers authenticate with a corporate identity 
 
 <details><summary>Answer and rationale</summary>**B** is correct. IAM Identity Center provides workforce federation, central account assignment, and short-lived role sessions. A creates permanent credentials and a large operational burden. C is for application customers, not workforce AWS account access. D violates root-user security practices.</details>
 
-## Question 2: Private database password rotation
+### Question 2: Private database password rotation
 
 Private ECS tasks need a database password that rotates automatically. The tasks must retrieve it without a public internet path. Which combination is best?
 
@@ -1682,7 +1682,7 @@ Private ECS tasks need a database password that rotates automatically. The tasks
 
 <details><summary>Answer and rationale</summary>**B** is correct. Secrets Manager supports managed secret rotation, the IAM role controls retrieval, and an interface endpoint keeps supported traffic private. A and D embed long-lived secrets. C makes the secret retrieval design needlessly exposed and lacks rotation.</details>
 
-## Question 3: Burst-tolerant orders
+### Question 3: Burst-tolerant orders
 
 An order API receives ten times its normal traffic during promotions. Orders may take several minutes to process, while customers only need an immediate acknowledgement. What design is best?
 
@@ -1693,7 +1693,7 @@ An order API receives ten times its normal traffic during promotions. Orders may
 
 <details><summary>Answer and rationale</summary>**B** decouples intake from processing and provides buffering, scaling, and failure handling. A/C couple customer latency to worker capacity. D is wrong because a read replica is not the destination for transactional writes.</details>
 
-## Question 4: Regional recovery objective
+### Question 4: Regional recovery objective
 
 A business requires recovery from a regional outage within minutes and can lose only a few seconds of data. It can afford a running secondary environment. Which direction best fits?
 
@@ -1704,7 +1704,7 @@ A business requires recovery from a regional outage within minutes and can lose 
 
 <details><summary>Answer and rationale</summary>**C** best matches a low RTO and low RPO without necessarily paying for full active-active operation. A is usually slower. B without replicated data fails the RPO requirement. D handles local AZ failure, not a regional outage.</details>
 
-## Question 5: Shared render inputs
+### Question 5: Shared render inputs
 
 Hundreds of Linux render workers in multiple AZs need concurrent access to the same directory tree. Completed files should be retained cheaply for years. Which storage design fits?
 
@@ -1715,7 +1715,7 @@ Hundreds of Linux render workers in multiple AZs need concurrent access to the s
 
 <details><summary>Answer and rationale</summary>**B** separates shared POSIX file access from low-cost object archive. A is not a normal shared filesystem design. C confuses object storage with POSIX behavior. D loses data on instance failure.</details>
 
-## Question 6: Read-heavy relational catalog
+### Question 6: Read-heavy relational catalog
 
 A product catalog uses Aurora PostgreSQL. Writes are moderate, but repeated product reads create high latency. Thousands of Lambda invocations also open connections at once. Which pair addresses both pressure points?
 
@@ -1726,7 +1726,7 @@ A product catalog uses Aurora PostgreSQL. Writes are moderate, but repeated prod
 
 <details><summary>Answer and rationale</summary>**B** caches repeat reads and pools database connections. A improves availability, not the primary read/connection bottlenecks. C may require a data-model migration and does not solve relational connection management. D is unrelated.</details>
 
-## Question 7: Global game endpoint
+### Question 7: Global game endpoint
 
 A latency-sensitive TCP game service needs two static anycast IP addresses and must route users to healthy regional endpoints. The payload is not cacheable web content. Which service is the fit?
 
@@ -1737,7 +1737,7 @@ A latency-sensitive TCP game service needs two static anycast IP addresses and m
 
 <details><summary>Answer and rationale</summary>**B** provides static anycast IPs and uses the AWS global network to healthy endpoints for TCP/UDP workloads. A is a CDN cache. C has no global anycast entry point by itself. D accelerates transfers to S3, not game endpoint routing.</details>
 
-## Question 8: Lake query cost
+### Question 8: Lake query cost
 
 A team receives daily CSV files into S3 and queries years of data with Athena. Queries are slow and scan too much data. What is the most direct architecture improvement?
 
@@ -1748,7 +1748,7 @@ A team receives daily CSV files into S3 and queries years of data with Athena. Q
 
 <details><summary>Answer and rationale</summary>**A** uses a managed transform to create a columnar, partitioned dataset that Athena can scan efficiently. The other choices do not make file analytics more efficient and several misuse unrelated services.</details>
 
-## Question 9: Savings without data loss
+### Question 9: Savings without data loss
 
 Private instances in two AZs reach S3 through NAT gateways. NAT processing charges are growing. The application must remain private and highly available. What change lowers cost without weakening the design?
 
@@ -1759,7 +1759,7 @@ Private instances in two AZs reach S3 through NAT gateways. NAT processing charg
 
 <details><summary>Answer and rationale</summary>**B** routes S3 traffic privately without NAT processing while retaining local-AZ egress resilience for destinations that need NAT. A weakens isolation; C adds an AZ failure risk; D does not create a route.</details>
 
-## Question 10: Interruptible nightly processing
+### Question 10: Interruptible nightly processing
 
 A nightly image-processing job can restart from checkpoints and has no strict completion deadline. The company wants the lowest compute cost while retaining automatic scale-out. Which approach is most suitable?
 
@@ -1770,7 +1770,7 @@ A nightly image-processing job can restart from checkpoints and has no strict co
 
 <details><summary>Answer and rationale</summary>**B** uses discounted interruptible capacity because the workload can resume safely. A wastes idle time. C adds a commitment that may not match the job's schedule. D is a database availability/read-scale design, not compute processing.</details>
 
-# Appendix F: Four-week study plan
+## Appendix F: Four-week study plan
 
 | Week | Primary objective | Daily study rhythm | Hands-on / recall deliverable |
 |---|---|---|---|
@@ -1779,7 +1779,7 @@ A nightly image-processing job can restart from checkpoints and has no strict co
 | 3 | High performance (24%) | Day 1 storage; Day 2 compute; Day 3 databases; Day 4 network; Day 5 ingestion | Produce one storage, compute, database, network, and lake decision table without looking. |
 | 4 | Cost plus integration (20%) | Day 1 storage cost; Day 2 compute pricing; Day 3 database cost; Day 4 network cost; Day 5 full mock/review | Answer all ten scenarios, explain rejected options aloud, and revisit weak keywords. |
 
-## Daily 45-minute loop
+### Daily 45-minute loop
 
 1. **10 minutes:** Read one task's ELI5 explanation and redraw its reference architecture.
 2. **10 minutes:** Cover the answer column of a comparison table and choose from the requirement wording.
@@ -1787,7 +1787,7 @@ A nightly image-processing job can restart from checkpoints and has no strict co
 4. **10 minutes:** Answer two scenario questions or invent one with an RPO/RTO, access pattern, or cost constraint.
 5. **5 minutes:** Record one uncertain keyword for targeted review tomorrow.
 
-# Final review checklist
+## Final review checklist
 
 - [ ] I can justify IAM roles, policy layers, workforce federation, Cognito, and private service access.
 - [ ] I can draw a segmented VPC and distinguish SGs from NACLs, WAF from Shield, and NAT from endpoints.
@@ -1800,7 +1800,7 @@ A nightly image-processing job can restart from checkpoints and has no strict co
 - [ ] I can find cost waste in idle compute, storage lifecycle, backup retention, NAT paths, and unnecessary data transfer.
 
 
-# Appendix G: The six Well-Architected pillars in one application
+## Appendix G: The six Well-Architected pillars in one application
 
 Use the pillars as a trade-off conversation, not six independent checklists. A design can be very cheap and still be wrong if it misses a recovery target; it can be highly available and still be wrong if it exposes customer records.
 
@@ -1819,7 +1819,7 @@ flowchart TB
     CO --- SU
 ```
 
-## Operational Excellence: make the architecture repeatable and observable
+### Operational Excellence: make the architecture repeatable and observable
 
 **ELI5:** Do not rely on the one person who remembers which console button fixes production. Give the team a recipe, gauges, and an incident playbook.
 
@@ -1832,7 +1832,7 @@ flowchart TB
 
 **In context:** An SQS worker architecture needs an alarm on `ApproximateAgeOfOldestMessage`, not just EC2 CPU. Queue age tells the operator whether customers are waiting. A runbook can say: inspect the DLQ, identify the poison message, correct it, replay safely with an idempotency key, and observe the queue draining.
 
-## Security: reduce blast radius at every boundary
+### Security: reduce blast radius at every boundary
 
 **ELI5:** A locked front door is useful, but a safe house also locks rooms, labels valuables, and records who entered.
 
@@ -1846,7 +1846,7 @@ flowchart TB
 
 **In context:** A private workload that accesses Secrets Manager through an interface endpoint, with an IAM task role scoped to one secret ARN, has a smaller blast radius than a public instance with a shared access key. The endpoint is a route decision; the IAM policy is still the authorization decision.
 
-## Reliability: design for the failures that matter
+### Reliability: design for the failures that matter
 
 **ELI5:** Assume individual machines, an AZ, and sometimes a Region can fail. Decide which failures the business can wait through and which it cannot.
 
@@ -1859,7 +1859,7 @@ flowchart TB
 
 **In context:** A payment workflow can accept an order to SQS during a temporary inventory outage. Workers retry with backoff, move repeatedly failing tasks to a DLQ, and use an idempotency key. This is more reliable than holding an API connection open while every dependency recovers.
 
-## Performance Efficiency: eliminate the real bottleneck
+### Performance Efficiency: eliminate the real bottleneck
 
 **ELI5:** Make the slow line faster by finding the actual slow station, not by buying a larger building.
 
@@ -1873,7 +1873,7 @@ flowchart TB
 
 **In context:** When an API is slow because the database is saturated by repeated catalog reads, caching popular values can lower latency and database load. Read replicas help if the workload needs fresh relational reads that cannot be served safely from cache. The correct answer follows the access pattern.
 
-## Cost Optimization: minimize total cost while satisfying requirements
+### Cost Optimization: minimize total cost while satisfying requirements
 
 **ELI5:** A cheap component that causes downtime, retrieval fees, or engineering work can be expensive overall. Pay for useful capacity, not merely low unit price.
 
@@ -1887,7 +1887,7 @@ flowchart TB
 
 **In context:** Sending private S3 traffic through NAT is often a direct cost smell. An S3 gateway endpoint removes that NAT path. However, a single shared NAT may still be a false economy for applications that must remain available during an AZ failure.
 
-## Sustainability: avoid running and storing what has no value
+### Sustainability: avoid running and storing what has no value
 
 **ELI5:** The cleanest server is the one that never had to run. Reduce waste with elastic managed services, efficient data formats, and timely deletion.
 
@@ -1899,7 +1899,7 @@ flowchart TB
 | Parquet and partitions | Scans less data for analytics | Performance + lower compute use |
 | Managed Multi-AZ services | Shares efficient managed fleet operations | Reliability without building spare hosts manually |
 
-# Appendix H: Requirement-to-service mini drills
+## Appendix H: Requirement-to-service mini drills
 
 | If the scenario says... | Explain the decision, not just the service |
 |---|---|
@@ -1920,9 +1920,9 @@ flowchart TB
 | "path-based routes to microservices" | ALB listener rules route HTTP requests; NLB is not the Layer 7 path-routing answer. |
 
 
-# Appendix I: Fast architecture review cards
+## Appendix I: Fast architecture review cards
 
-## Card 1: Secure multi-account application
+### Card 1: Secure multi-account application
 
 | Layer | Design | Why it belongs | One check |
 |---|---|---|---|
@@ -1932,7 +1932,7 @@ flowchart TB
 | Data | S3/RDS KMS encryption + resource policy | Data access is explicit and auditable | Key policy permits required backup/restore path |
 | Audit | Organization CloudTrail + Config | Records API/configuration changes | Logs are retained in a protected account |
 
-## Card 2: Segmented VPC traffic rules
+### Card 2: Segmented VPC traffic rules
 
 | Source | Destination | Permit with | Why |
 |---|---|---|---|
@@ -1942,7 +1942,7 @@ flowchart TB
 | Private app | S3 | Gateway endpoint route/policy | Private path with no NAT processing |
 | Private app | Internet patch/API | NAT gateway in same AZ | Initiated egress without inbound exposure |
 
-## Card 3: Data protection sequence
+### Card 3: Data protection sequence
 
 1. Classify information and decide residency/retention before copying it.
 2. Use TLS for movement and KMS-integrated encryption at rest.
@@ -1951,7 +1951,7 @@ flowchart TB
 5. Test a restore using the same key and access conditions that an incident will use.
 6. Archive or delete by lifecycle only after legal and recovery needs are satisfied.
 
-## Card 4: Decoupled high-availability sequence
+### Card 4: Decoupled high-availability sequence
 
 1. Place stateless targets in at least two AZs behind a health-checked load balancer.
 2. Put asynchronous work in SQS and set a DLQ plus visibility timeout.
@@ -1960,7 +1960,7 @@ flowchart TB
 5. Make consumers idempotent because retries and redelivery are normal.
 6. Add a cross-Region plan only when the requirement names regional recovery/RPO/RTO.
 
-## Card 5: Cost review in five questions
+### Card 5: Cost review in five questions
 
 | Question | Likely action |
 |---|---|
@@ -1970,7 +1970,7 @@ flowchart TB
 | Is private AWS service traffic traversing NAT? | Add appropriate VPC endpoints and route correctly. |
 | Are users downloading the same public objects repeatedly? | Use CloudFront with intentional cache behavior. |
 
-## Exam answer elimination checklist
+### Exam answer elimination checklist
 
 - Reject an answer that uses permanent keys when a role and STS fit.
 - Reject a public database or broad `0.0.0.0/0` path when private tiers are required.
@@ -1983,7 +1983,7 @@ flowchart TB
 - Reject a cheaper option that violates a stated compliance, latency, or availability constraint.
 
 
-## Last-minute recall
+### Last-minute recall
 
 - State the constraint first, then select the managed architecture that satisfies it.
 - Name one configuration knob and one failure mode for every service choice.
